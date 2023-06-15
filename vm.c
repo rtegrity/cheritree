@@ -359,6 +359,8 @@ void print_capability_tree(void *vaddr, char *prefix)
         void **ptr = (void **)((char *)vaddr - ((size_t)vaddr - cheri_align_up(cheri_base_get(vaddr), sizeof(void *))));
         uintptr_t end = cheri_align_down(cheri_base_get(ptr) + cheri_length_get(ptr), sizeof(void *));
 
+        if (!cheri_is_valid(ptr)) return;
+
         for (; (uintptr_t)ptr < end; ptr++) {
              if (check_address_valid(&ptr) && cheri_is_valid(*ptr)) {
                 char pfx[200];
@@ -372,11 +374,16 @@ void print_capability_tree(void *vaddr, char *prefix)
 
 void find_memory_references()
 {
-    void *regs[32];
+    void *regs[32], *ptr;
 
     saveregs(regs);
 
     nprinted = 0;
+
+    ptr = cheri_pcc_get();
+
+    if (cheri_is_valid(ptr))
+        print_capability_tree(ptr, "pcc");
 
     for (int i = 1; i < sizeof(regs) / sizeof(regs[0]); i++)
         if (cheri_is_valid(regs[i])) {
@@ -385,11 +392,13 @@ void find_memory_references()
             print_capability_tree(regs[i], prefix);
         }
 
-    if (cheri_is_valid(regs[0])) {
-        char prefix[20];
-        sprintf(prefix, "c%d", 0);
-        print_capability_tree(regs[0], prefix);
-    }
+    if (cheri_is_valid(regs[0]))
+        print_capability_tree(regs[0], "c0");
+
+    ptr = cheri_ddc_get();
+
+    if (cheri_is_valid(ptr))
+        print_capability_tree(ptr, "ddc");
 
 //  print_mappings();
 }
