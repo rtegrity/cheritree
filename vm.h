@@ -5,5 +5,5 @@
  */
 
 
-extern int print_memory_mappings();
+extern int print_mappings();
 extern int find_memory_references();
