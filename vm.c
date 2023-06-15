@@ -43,6 +43,7 @@ static struct mapping {
     char prot[6];
     char flags[6];
     char type[3];
+    int guard;
     struct module *module;
 } mappings[4096];
 
@@ -158,7 +159,7 @@ add_module(char *path, uintptr_t addr)
     char *cp;
 
     for (; i < nmodules; i++)
-        if (!strcasecmp(modules[i].path, path)) {
+        if (*path && !strcasecmp(modules[i].path, path)) {
             // TODO: adjust base ???
             return &modules[i];
         }
@@ -184,7 +185,8 @@ void print_mapping(struct mapping *mapping)
 {
     printf("%#" PRIxPTR "-%#" PRIxPTR " %s %s %s %s\n",
         mapping->start, mapping->end, mapping->prot,
-        mapping->flags, mapping->type, mapping->module->path);
+        mapping->flags, mapping->type,
+        (*mapping->module->path ? mapping->module->path : mapping->module->name));
 }
 
 
@@ -211,11 +213,15 @@ void add_mapping(uintptr_t start, uintptr_t end,
 
     if (i == nmappings) nmappings++;
 
+    if (mappings[i].start == start && mappings[i].end == end)
+        return;
+
     mappings[i].start = start;
     mappings[i].end = end;
     strcpy(mappings[i].prot, prot);
     strcpy(mappings[i].flags, flags);
     strcpy(mappings[i].type, type);
+    mappings[i].guard = !strcmp(prot, "-----");
     mappings[i].module = add_module(path, start);
 }
 
@@ -254,7 +260,7 @@ struct mapping *find_mapping(uintptr_t addr)
 {
     static struct module unknown_module = { 0, "Unknown", "Unknown" };
     static struct mapping unknown_mapping = {
-        0, 0, "-----", "", "", &unknown_module
+        0, 0, "", "", "", 0, &unknown_module
     };
 
     for (int i = 0; i < nmappings; i++) {
@@ -275,6 +281,28 @@ struct mapping *find_mapping(uintptr_t addr)
 }
 
 
+void add_mapping_name(void *function, void *stack, void *heap)
+{
+    struct mapping *functionmap = find_mapping((uintptr_t)function);
+    struct mapping *stackmap = find_mapping((uintptr_t)stack);
+    struct mapping *heapmap = find_mapping((uintptr_t)heap);
+
+    if (!*functionmap->module->name) return;
+
+    if (!*stackmap->module->name) {
+        char buf[1024];
+        sprintf(buf, "%s!stack", functionmap->module->name);
+        stackmap->module->name = strdup(buf);
+    }
+
+    if (!*heapmap->module->name) {
+        char buf[1024];
+        sprintf(buf, "%s!heap", functionmap->module->name);
+        heapmap->module->name = strdup(buf);
+    }
+}
+
+
 void print_mappings()
 {
     int i;
@@ -282,7 +310,8 @@ void print_mappings()
     load_mappings();
 
     for (i = 0; i < nmappings; i++)
-        print_mapping(&mappings[i]);
+        if (!mappings[i].guard)
+            print_mapping(&mappings[i]);
 }
 
 
@@ -334,7 +363,7 @@ int check_address_valid(void ***pptr)
         if (addr >= mappings[i].end) continue;
         if (addr < mappings[i].start) break;
 
-        if (strcmp(mappings[i].prot, "-----") == 0) {
+        if (mappings[i].guard) {
             *(char **)pptr += (mappings[i].end - sizeof(void *)) - (size_t)*pptr;
             return 0;
         }
@@ -399,6 +428,4 @@ void find_memory_references()
 
     if (cheri_is_valid(ptr))
         print_capability_tree(ptr, "ddc");
-
-//  print_mappings();
 }

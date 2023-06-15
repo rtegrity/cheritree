@@ -66,6 +66,13 @@ void check_string_arg()
 
 int main (int argc, char **argv)
 {
+    int dummy = 0;
+    char *cp;
+
+    cp = malloc(1);
+    add_mapping_name(&main, &dummy, cp);
+    free(cp);
+
     lib1_init();
     lib2_init();
 
@@ -74,6 +81,8 @@ int main (int argc, char **argv)
 
     check_string_arg();
 
-    find_memory_references();
+//  find_memory_references();
+
+    print_mappings();
     return 0;
 }
