@@ -10,6 +10,9 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
+#include <libprocstat.h>
 #ifdef __CHERI_PURE_CAPABILITY__
 #include <cheriintrin.h>
 #endif
@@ -22,11 +25,16 @@ extern int saveregs(void **);
 static int nmappings;
 static struct mapping mappings[4096];
 
+static int str_to_prot(const char *str);
+static void prot_to_str(char *str, int prot);
+static int str_to_type(const char *str);
+static void type_to_str(char *str, int type);
+
 
 void print_mapping(struct mapping *mapping)
 {
     printf("%#" PRIxPTR "-%#" PRIxPTR " %s %s %s %s\n",
-        mapping->start, mapping->end, mapping->prot,
+        mapping->start, mapping->end, mapping->_prot,
         mapping->flags, mapping->type,
         (*mapping->module->path ? mapping->module->path : mapping->module->name));
 }
@@ -60,7 +68,7 @@ void add_mapping(uintptr_t start, uintptr_t end,
 
     mappings[i].start = start;
     mappings[i].end = end;
-    strcpy(mappings[i].prot, prot);
+    strcpy(mappings[i]._prot, prot);
     strcpy(mappings[i].flags, flags);
     strcpy(mappings[i].type, type);
     mappings[i].guard = !strcmp(prot, "-----");
@@ -69,6 +77,62 @@ void add_mapping(uintptr_t start, uintptr_t end,
 
 
 void load_mappings()
+{
+    struct procstat *stat = procstat_open_sysctl();
+    unsigned int count;
+
+    if (!stat) {
+        fprintf(stderr, "Unable to open procstat\n");
+        exit(1);
+    }
+
+    struct kinfo_proc *proc = procstat_getprocs(stat,
+        KERN_PROC_PID, getpid(), &count);
+
+    if (!proc || count != 1) {
+        procstat_close(stat);
+        fprintf(stderr, "Unable to getprocs\n");
+        exit(1);
+    }
+
+    struct kinfo_vmentry *map = procstat_getvmmap(stat,
+        proc, &count);
+
+    if (!map || count == 0) {
+        procstat_freeprocs(stat, proc);
+        procstat_close(stat);
+        fprintf(stderr, "Unable to get vmmap\n");
+        exit(1);
+    }
+
+    for (int i = 0; i < count; i++) {
+        char prot[6], flags[6], type[3];
+
+        prot_to_str(prot, kvme_to_prot(map[i].kve_protection));
+        type_to_str(type, kvme_to_type(map[i].kve_type));
+
+        flags[0] = (map[i].kve_flags & KVME_FLAG_COW) ? 'C' :
+                    (map[i].kve_flags & KVME_FLAG_GUARD) ? 'G' :
+                    (map[i].kve_flags & KVME_FLAG_UNMAPPED) ? 'U' : '-';
+        flags[1] = (map[i].kve_flags & KVME_FLAG_NEEDS_COPY) ? 'N' : '-';
+        flags[2] = (map[i].kve_flags & KVME_FLAG_SUPER) ? 'S' : '-';
+        flags[3] = (map[i].kve_flags & KVME_FLAG_GROWS_UP) ? 'U' :
+                    (map[i].kve_flags & KVME_FLAG_GROWS_DOWN) ? 'D' : '-';
+        flags[4] = (map[i].kve_flags & KVME_FLAG_USER_WIRED) ? 'W' : '-';
+        flags[5] = 0;
+
+        add_mapping(map[i].kve_start, map[i].kve_end,
+            prot, flags, type, map[i].kve_path);
+    }
+
+    procstat_freevmmap(stat, map);
+    procstat_freeprocs(stat, proc);
+    procstat_close(stat);
+    return;
+}
+
+
+void load_mappings_run_procstat()
 {
     char buffer[1024];
     FILE *fp;
@@ -152,4 +216,55 @@ int check_address_valid(void ***pptr)
     }
 
     return 0;
+}
+
+
+static int str_to_prot(const char *str)
+{
+    return (str[0] == 'r' ? CT_PROT_READ : 0)
+         | (str[1] == 'w' ? CT_PROT_WRITE : 0)
+         | (str[2] == 'x' ? CT_PROT_EXEC : 0)
+         | (str[3] == 'R' ? CT_PROT_READ_CAP : 0)
+         | (str[3] == 'W' ? CT_PROT_WRITE_CAP : 0);
+}
+
+
+static void prot_to_str(char *str, int prot)
+{
+    str[0] = (prot & CT_PROT_READ) ? 'r' : '-';
+    str[1] = (prot & CT_PROT_WRITE) ? 'w' : '-';
+    str[2] = (prot & CT_PROT_EXEC) ? 'x' : '-';
+    str[3] = (prot & CT_PROT_READ_CAP) ? 'R' : '-';
+    str[4] = (prot & CT_PROT_WRITE_CAP) ? 'W' : '-';
+    str[5] = 0;
+}
+
+
+static int str_to_type(const char *str)
+{
+    return !strcmp(str, "--") ? CT_TYPE_NONE :
+           !strcmp(str, "df") ? CT_TYPE_DEFAULT :
+           !strcmp(str, "vn") ? CT_TYPE_VNODE :
+           !strcmp(str, "sw") ? CT_TYPE_SWAP :
+           !strcmp(str, "dv") ? CT_TYPE_DEVICE :
+           !strcmp(str, "ph") ? CT_TYPE_PHYS :
+           !strcmp(str, "dd") ? CT_TYPE_DEAD :
+           !strcmp(str, "sg") ? CT_TYPE_SG :
+           !strcmp(str, "md") ? CT_TYPE_MGTDEVICE :
+           !strcmp(str, "gd") ? CT_TYPE_GUARD : CT_TYPE_UNKNOWN;
+}
+
+
+static void type_to_str(char *str, int type)
+{
+    strcpy(str, (type == CT_TYPE_NONE) ? "--" :
+        (type == CT_TYPE_DEFAULT) ? "df" :
+        (type == CT_TYPE_VNODE) ? "vn" :
+        (type == CT_TYPE_SWAP) ? "sw" :
+        (type == CT_TYPE_DEVICE) ? "dv" :
+        (type == CT_TYPE_PHYS) ? "ph" :
+        (type == CT_TYPE_DEAD) ? "dd" :
+        (type == CT_TYPE_SG) ? "sg" :
+        (type == CT_TYPE_MGTDEVICE) ? "md" :
+        (type == CT_TYPE_GUARD) ? "gd" : "??");
 }

@@ -17,6 +17,7 @@ nm --print-size --extern-only lib1.so
 ## Capability Tree
 
 Rework with libprocstat and libelf.
+Use ptraddr_t instead of size_t ??
 
 
 ## Hybrid

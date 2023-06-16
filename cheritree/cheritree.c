@@ -37,14 +37,21 @@ void add_mapping_name(void *function, void *stack, void *heap)
 
     if (!*stackmap->module->name) {
         char buf[1024];
-        sprintf(buf, "%s!stack", functionmap->module->name);
+        sprintf(buf, "[%s!stack]", functionmap->module->name);
         stackmap->module->name = strdup(buf);
     }
 
     if (!*heapmap->module->name) {
         char buf[1024];
-        sprintf(buf, "%s!heap", functionmap->module->name);
+        sprintf(buf, "[%s!heap]", functionmap->module->name);
         heapmap->module->name = strdup(buf);
+    }
+
+    // TODO - should try and do this even if init isn't called
+    if (function != &add_mapping_name) {
+        char *cp = malloc(1);
+        add_mapping_name(&add_mapping_name, &cp, cp);
+        free(cp);
     }
 }
 
