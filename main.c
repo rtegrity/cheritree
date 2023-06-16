@@ -81,8 +81,8 @@ int main (int argc, char **argv)
 
     check_string_arg();
 
-//  find_memory_references();
+  find_memory_references();
 
-    print_mappings();
+//    print_mappings();
     return 0;
 }

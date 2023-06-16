@@ -328,7 +328,10 @@ void print_address(uintptr_t addr)
 
     size_t offset = addr - ((size_t)module->base + (size_t)symbol->value);
 
-    if (offset)
+    if (!*module->path)
+        printf("%s+%#zx", module->name, offset);
+
+    else if (offset)
         printf("%s!%s+%#zx", module->name, symbol->name, offset);
 
     else printf("%s!%s", module->name, symbol->name);
@@ -342,7 +345,7 @@ int check_printed(void *addr)
     for (; i < nprinted; i++)
         if (printed[i] == addr ||
                 (cheri_base_get(printed[i]) <= cheri_address_get(addr)
-                && cheri_address_get(addr) + sizeof(void *) < cheri_base_get(printed[i]) + cheri_length_get(printed[i])))
+                && cheri_address_get(addr) + sizeof(void *) <= cheri_base_get(printed[i]) + cheri_length_get(printed[i])))
             return 1;
 
     if (i >= sizeof(printed) / sizeof(printed[0])) {
