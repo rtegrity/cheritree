@@ -14,11 +14,10 @@
 #include <string.h>
 #include "lib1.h"
 #include "lib2.h"
-#include "vm.h"
-
 #ifdef __CHERI_PURE_CAPABILITY__
 #include <cheriintrin.h>
 #endif
+#include "cheritree.h"
 
 
 /*
@@ -66,11 +65,8 @@ void check_string_arg()
 
 int main (int argc, char **argv)
 {
-    int dummy = 0;
-    char *cp;
-
-    cp = malloc(1);
-    add_mapping_name(&main, &dummy, cp);
+    char *cp = malloc(1);
+    add_mapping_name(&main, &cp, cp);
     free(cp);
 
     lib1_init();
@@ -81,8 +77,8 @@ int main (int argc, char **argv)
 
     check_string_arg();
 
-  find_memory_references();
+//  find_memory_references();
 
-//    print_mappings();
+    print_mappings();
     return 0;
 }

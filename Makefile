@@ -1,16 +1,19 @@
-CFLAGS=-march=morello -mabi=purecap -g -Ilib1 -Ilib2
-# CFLAGS=-march=morello -mabi=aapcs -g -Ilib1 -Ilib2
+CFLAGS=-march=morello -mabi=purecap -g -Ilib1 -Ilib2 -Icheritree
+# CFLAGS=-march=morello -mabi=aapcs -g -Ilib1 -Ilib2 -Icheritree
 C18NFLAGS=-Wl,--dynamic-linker=/libexec/ld-elf-c18n.so.1
 
 rebuild: clean all
 
 all:	shared comp
 
-shared:	main.c lib1.so lib2.so
-	cc $(CFLAGS) main.c vm.c saveregs.S -o shared lib1.so lib2.so
+shared:	main.c lib1.so lib2.so cheritree.so
+	cc $(CFLAGS) main.c -o shared lib1.so lib2.so cheritree.so
 
-comp:	main.c lib1.so lib2.so
-	cc $(CFLAGS) $(C18NFLAGS) vm.c saveregs.S main.c -o comp lib1.so lib2.so
+comp:	main.c lib1.so lib2.so cheritree.so
+	cc $(CFLAGS) $(C18NFLAGS) main.c -o comp lib1.so lib2.so cheritree.so
+
+cheritree.so: cheritree/cheritree.c cheritree/saveregs.S
+	cc -fPIC -shared $(CFLAGS) cheritree/cheritree.c cheritree/saveregs.S -o cheritree.so
 
 lib1.so: lib1/lib1.c
 	cc -fPIC -shared $(CFLAGS) -Wl,--version-script=lib1/lib1.map lib1/lib1.c -o lib1.so

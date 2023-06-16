@@ -14,6 +14,11 @@ As documented, there's currently no protection against vulnerabilities from modi
 nm --print-size --extern-only lib1.so
 ~~~
 
+## Capability Tree
+
+Rework with libprocstat and libelf.
+
+
 ## Hybrid
 
 Hybrid builds don't work with the compartmentalisation loader. They abort with an ENOEXEC error, which is reasonable.

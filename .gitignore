@@ -1,9 +1,6 @@
 # binaries
 comp
 shared
-lib1.so
-lib2.so
-saveregs.o
 *.core
 
 # Prerequisites
