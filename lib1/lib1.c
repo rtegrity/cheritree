@@ -7,10 +7,10 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #ifdef __CHERI_PURE_CAPABILITY__
 #include <cheriintrin.h>
 #endif
+#include <cheritree.h>
 
 
 int lib1_int = 30;
@@ -19,6 +19,7 @@ int lib1_int_bounds = 40;
 
 void lib1_init()
 {
+    cheritree_init();
 }
 
 

@@ -12,12 +12,12 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
-#include "lib1.h"
-#include "lib2.h"
 #ifdef __CHERI_PURE_CAPABILITY__
 #include <cheriintrin.h>
 #endif
-#include "cheritree.h"
+#include <cheritree.h>
+#include "lib1.h"
+#include "lib2.h"
 
 
 /*
@@ -65,9 +65,7 @@ void check_string_arg()
 
 int main (int argc, char **argv)
 {
-    char *cp = malloc(1);
-    add_mapping_name(&main, &cp, cp);
-    free(cp);
+    cheritree_init();
 
     lib1_init();
     lib2_init();

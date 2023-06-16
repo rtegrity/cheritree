@@ -12,273 +12,19 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
-
 #ifdef __CHERI_PURE_CAPABILITY__
 #include <cheriintrin.h>
 #endif
+#include "mapping.h"
+#include "module.h"
+#include "symbol.h"
 
 
 extern int saveregs(void **);
 
-struct symbol {
-    uintptr_t value;
-    char *name;
-    char type;
-};
-
-static struct module {
-    uintptr_t base;
-    char *path;
-    char *name;
-    struct symbol *symbols;
-    int nsymbols;
-    int maxsymbols;
-} modules[256];
-
-static int nmodules;
-
-static struct mapping {
-    uintptr_t start;
-    uintptr_t end;
-    char prot[6];
-    char flags[6];
-    char type[3];
-    int guard;
-    struct module *module;
-} mappings[4096];
-
-static int nmappings;
 
 static void *printed[8192];
 static int nprinted;
-
-
-void print_symbol(struct symbol *symbol)
-{
-    printf("%#" PRIxPTR " %c %s\n", symbol->value,
-        symbol->type, symbol->name);
-}
-
-
-void alloc_symbols(struct module *module, char *cmd)
-{
-    char buffer[1024];
-    FILE *fp;
-
-    if (!*module->path) return;
-
-    sprintf(buffer, "%s | wc -l", cmd);
-    fp = popen(buffer, "r");
-
-    if (fp == NULL) {
-        fprintf(stderr, "Unable to count symbols\n");
-        exit(1);
-    }
-
-    fscanf(fp, "%d", &module->maxsymbols);
-    fclose(fp);
-
-    module->symbols = calloc(module->maxsymbols, sizeof(struct symbol));
-
-    if (!module->symbols) {
-        fprintf(stderr, "Unable to allocate symbols");
-        exit(1);
-    }
-}
-
-
-void load_symbols(struct module *module)
-{
-    char buffer[1024];
-    FILE *fp;
-
-    if (!*module->path) return;
-
-    sprintf(buffer, "nm -ne %s", module->path);
-    alloc_symbols(module, buffer);
-
-    fp = popen(buffer, "r");
-
-    if (fp == NULL) {
-        fprintf(stderr, "Unable to run nm\n");
-        exit(1);
-    }
-
-    while (fgets(buffer, sizeof(buffer), fp)) {
-        char type[2], name[1024];
-        uintptr_t value;
-
-        if (sscanf(buffer, "%" PRIxPTR " %1s %1023s", &value, type, name) != 3)
-            continue;
-
-        if (module->nsymbols >= module->maxsymbols)
-            break;
-
-        module->symbols[module->nsymbols].value = value;
-        module->symbols[module->nsymbols].type = type[0];
-        module->symbols[module->nsymbols].name = strdup(name);
-        module->nsymbols++;
-    }
-
-    fclose(fp);
-}
-
-
-struct symbol *
-find_symbol(struct module *module, uintptr_t addr)
-{
-    static struct symbol base_symbol = { 0, "base", ' ' };
-    int i = 0;
-
-    for (; i < module->nsymbols; i++)
-        if (module->base + (size_t)module->symbols[i].value > addr) break;
-
-    return (i) ? &module->symbols[i-1] : &base_symbol;
-}
-
-
-void print_symbols(struct module *module)
-{
-    for (int i = 0; i < module->nsymbols; i++)
-        printf("%#" PRIxPTR " %c %s\n", module->symbols[i].value,
-            module->symbols[i].type, module->symbols[i].name);
-}
-
-
-void print_module(struct module *module)
-{
-    printf("%#" PRIxPTR " %s %s\n",
-        module->base, module->name, module->path);
-}
-
-
-struct module *
-add_module(char *path, uintptr_t addr)
-{
-    int i = 0;
-    char *cp;
-
-    for (; i < nmodules; i++)
-        if (*path && !strcasecmp(modules[i].path, path)) {
-            // TODO: adjust base ???
-            return &modules[i];
-        }
-
-    if (i >= sizeof(modules) / sizeof(modules[0])) {
-        fprintf(stderr, "Too many modules");
-        exit(1);
-    }
-
-    modules[i].path = strdup(path);
-    modules[i].base = addr;
-
-    cp = strrchr(path, '/');
-    modules[i].name = strdup(cp ? cp+1 : path);
-    nmodules++;
-
-    load_symbols(&modules[i]);
-    return &modules[i];
-}
-
-
-void print_mapping(struct mapping *mapping)
-{
-    printf("%#" PRIxPTR "-%#" PRIxPTR " %s %s %s %s\n",
-        mapping->start, mapping->end, mapping->prot,
-        mapping->flags, mapping->type,
-        (*mapping->module->path ? mapping->module->path : mapping->module->name));
-}
-
-
-void add_mapping(uintptr_t start, uintptr_t end,
-    char *prot, char *flags, char *type, char *path)
-{
-    int i = 0;
-
-    for (; i < nmappings; i++) {
-        if (start >= mappings[i].end) continue;
-
-        if (start < mappings[i].start) {
-            for (int j = nmappings++; j > i; j--)
-                mappings[j] = mappings[j-1];
-        }
-
-        break;
-    }
-
-    if (i >= sizeof(mappings) / sizeof(mappings[0])) {
-        fprintf(stderr, "Too many mappings");
-        exit(1);
-    }
-
-    if (i == nmappings) nmappings++;
-
-    if (mappings[i].start == start && mappings[i].end == end)
-        return;
-
-    mappings[i].start = start;
-    mappings[i].end = end;
-    strcpy(mappings[i].prot, prot);
-    strcpy(mappings[i].flags, flags);
-    strcpy(mappings[i].type, type);
-    mappings[i].guard = !strcmp(prot, "-----");
-    mappings[i].module = add_module(path, start);
-}
-
-
-void load_mappings()
-{
-    char buffer[1024];
-    FILE *fp;
-
-    sprintf(buffer, "procstat -v %d", getpid());
-    
-    fp = popen(buffer, "r");
-
-    if (fp == NULL) {
-        fprintf(stderr, "Unable to run procstat\n");
-        exit(1);
-    }
-
-    while (fgets(buffer, sizeof(buffer), fp)) {
-        char prot[6], flags[6], type[3], path[PATH_MAX];
-        uintptr_t start, end;
-
-        strcpy(path, "");
-        int rc = sscanf(buffer, "%*d %" PRIxPTR " %" PRIxPTR
-            " %5s %*d %*d %*d %*d %5s %2s %s", &start, &end, prot, flags, type, path);
-
-        if (rc >= 5)
-            add_mapping(start, end, prot, flags, type, path);
-    }
-
-    fclose(fp);
-}
-
-
-struct mapping *find_mapping(uintptr_t addr)
-{
-    static struct module unknown_module = { 0, "Unknown", "Unknown" };
-    static struct mapping unknown_mapping = {
-        0, 0, "", "", "", 0, &unknown_module
-    };
-
-    for (int i = 0; i < nmappings; i++) {
-        if (addr >= mappings[i].end) continue;
-        if (addr < mappings[i].start) break;
-        return &mappings[i];
-    }
-
-    load_mappings();
-
-    for (int i = 0; i < nmappings; i++) {
-        if (addr >= mappings[i].end) continue;
-        if (addr < mappings[i].start) break;
-        return &mappings[i];
-    }
-
-    return &unknown_mapping;
-}
 
 
 void add_mapping_name(void *function, void *stack, void *heap)
@@ -300,18 +46,6 @@ void add_mapping_name(void *function, void *stack, void *heap)
         sprintf(buf, "%s!heap", functionmap->module->name);
         heapmap->module->name = strdup(buf);
     }
-}
-
-
-void print_mappings()
-{
-    int i;
-
-    load_mappings();
-
-    for (i = 0; i < nmappings; i++)
-        if (!mappings[i].guard)
-            print_mapping(&mappings[i]);
 }
 
 
@@ -354,26 +88,6 @@ int check_printed(void *addr)
     }
 
     printed[nprinted++] = addr;
-    return 0;
-}
-
-
-int check_address_valid(void ***pptr)
-{
-    uintptr_t addr = (uintptr_t)*pptr;
-
-    for (int i = 0; i < nmappings; i++) {
-        if (addr >= mappings[i].end) continue;
-        if (addr < mappings[i].start) break;
-
-        if (mappings[i].guard) {
-            *(char **)pptr += (mappings[i].end - sizeof(void *)) - (size_t)*pptr;
-            return 0;
-        }
-
-        return 1;
-    }
-
     return 0;
 }
 

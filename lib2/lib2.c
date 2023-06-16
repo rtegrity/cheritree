@@ -7,14 +7,15 @@
 #include <assert.h>
 #include <stdio.h>
 #include "lib1.h"
-
 #ifdef __CHERI_PURE_CAPABILITY__
 #include <cheriintrin.h>
 #endif
+#include <cheritree.h>
 
 
 void lib2_init()
 {
+    cheritree_init();
 }
 
 
