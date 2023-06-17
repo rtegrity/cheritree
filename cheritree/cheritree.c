@@ -27,10 +27,11 @@ static void *printed[8192];
 static int nprinted;
 
 
-void add_mapping_name(void *function, void *stack, void *heap)
+void add_mapping_name(void *function, void *stack, void *data, void *heap)
 {
     struct mapping *functionmap = find_mapping((uintptr_t)function);
     struct mapping *stackmap = find_mapping((uintptr_t)stack);
+    struct mapping *datamap = find_mapping((uintptr_t)data);
     struct mapping *heapmap = find_mapping((uintptr_t)heap);
 
     if (!*functionmap->module->name) return;
@@ -41,16 +42,23 @@ void add_mapping_name(void *function, void *stack, void *heap)
         stackmap->module->name = strdup(buf);
     }
 
+    if (!*datamap->module->name) {
+        char buf[1024];
+        sprintf(buf, "[%s!data]", functionmap->module->name);
+        datamap->module->name = strdup(buf);
+    }
+
     if (!*heapmap->module->name) {
         char buf[1024];
         sprintf(buf, "[%s!heap]", functionmap->module->name);
         heapmap->module->name = strdup(buf);
     }
 
-    // TODO - should try and do this even if init isn't called
+    // HACK TODO - should try and do this even if init isn't called
     if (function != &add_mapping_name) {
+        static int data;
         char *cp = malloc(1);
-        add_mapping_name(&add_mapping_name, &cp, cp);
+        add_mapping_name(&add_mapping_name, &cp, &data, cp);
         free(cp);
     }
 }

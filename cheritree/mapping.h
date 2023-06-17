@@ -10,30 +10,51 @@
 #include <stdint.h>
 #include <sys/user.h>
 
+
 /*
  *  Memory mapping.
  */
 struct mapping {
     uintptr_t start;
     uintptr_t end;
-    char _prot[6];
-    char flags[6];
-    char type[3];
-    int guard;
+    int prot;
+    int flags;
+    int type;
     struct module *module;
 };
+
 
 /*
  *  Access protection.
  */
+#define CT_PROT_NONE            0
 #define CT_PROT_READ            KVME_PROT_READ
 #define CT_PROT_WRITE           KVME_PROT_WRITE
 #define CT_PROT_EXEC            KVME_PROT_EXEC
 #define CT_PROT_READ_CAP        KVME_PROT_READ_CAP
 #define CT_PROT_WRITE_CAP       KVME_PROT_WRITE_CAP
 
+#define CT_PROT_MAXLEN          6
+
 #define kvme_to_prot(x)         (x)
-#define prot_to_kvme(x)         (x)
+
+
+/*
+ *  Mapping flags.
+ */
+#define CT_FLAG_COW             KVME_FLAG_COW
+#define CT_FLAG_GUARD           KVME_FLAG_GUARD
+#define CT_FLAG_UNMAPPED        KVME_FLAG_UNMAPPED
+#define CT_FLAG_NEEDS_COPY      KVME_FLAG_NEEDS_COPY
+#define CT_FLAG_SUPER           KVME_FLAG_SUPER
+#define CT_FLAG_GROWS_UP        KVME_FLAG_GROWS_UP
+#define CT_FLAG_GROWS_DOWN      KVME_FLAG_GROWS_DOWN
+#define CT_FLAG_USER_WIRED      KVME_FLAG_USER_WIRED
+
+#define CT_FLAGS_MAXLEN         6
+
+#define kvme_to_flags(x)        (x)
+
 
 /*
  *  Mapping type.
@@ -50,8 +71,10 @@ struct mapping {
 #define CT_TYPE_GUARD           KVME_TYPE_GUARD
 #define CT_TYPE_UNKNOWN         KVME_TYPE_UNKNOWN
 
+#define CT_TYPE_MAXLEN          3
+
 #define kvme_to_type(x)         (x)
-#define type_to_kvme(x)         (x)
+
 
 extern void print_mapping(struct mapping *mapping);
 extern void load_mappings();

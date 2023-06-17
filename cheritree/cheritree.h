@@ -12,11 +12,12 @@
 extern int print_mappings();
 extern int find_memory_references();
 
-extern void add_mapping_name(void *function, void *stack, void *heap);
+extern void add_mapping_name(void *function, void *stack, void *data, void *heap);
 
 static void cheritree_init() {
+    static int data;
     char *cp = malloc(1);
-    add_mapping_name(&cheritree_init, &cp, cp);
+    add_mapping_name(&cheritree_init, &cp, &data, cp);
     free(cp);
 }
 
