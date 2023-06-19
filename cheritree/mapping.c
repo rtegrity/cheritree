@@ -18,6 +18,7 @@
 #endif
 #include "module.h"
 #include "mapping.h"
+#include "util.h"
 
 
 static int nmappings;
@@ -146,7 +147,7 @@ void load_mappings()
                 str_to_flags(flags), str_to_type(type), path);
     }
 
-    fclose(fp);
+    pclose(fp);
 }
 
 
@@ -217,7 +218,7 @@ static int str_to_prot(const char *s)
          | (s[1] == 'w' ? CT_PROT_WRITE : 0)
          | (s[2] == 'x' ? CT_PROT_EXEC : 0)
          | (s[3] == 'R' ? CT_PROT_READ_CAP : 0)
-         | (s[3] == 'W' ? CT_PROT_WRITE_CAP : 0);
+         | (s[4] == 'W' ? CT_PROT_WRITE_CAP : 0);
 }
 
 

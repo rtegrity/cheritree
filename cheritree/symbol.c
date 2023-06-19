@@ -40,7 +40,7 @@ void alloc_symbols(struct module *module, char *cmd)
     }
 
     fscanf(fp, "%d", &module->maxsymbols);
-    fclose(fp);
+    pclose(fp);
 
     module->symbols = calloc(module->maxsymbols, sizeof(struct symbol));
 
@@ -53,7 +53,7 @@ void alloc_symbols(struct module *module, char *cmd)
 
 void load_symbols(struct module *module)
 {
-    char buffer[1024];
+    char buffer[2048];
     FILE *fp;
 
     if (!*module->path) return;
@@ -84,7 +84,7 @@ void load_symbols(struct module *module)
         module->nsymbols++;
     }
 
-    fclose(fp);
+    pclose(fp);
 }
 
 
