@@ -15,6 +15,7 @@
 #endif
 #include "symbol.h"
 #include "module.h"
+#include "util.h"
 
 
 void print_symbol(struct symbol *symbol)
@@ -24,67 +25,42 @@ void print_symbol(struct symbol *symbol)
 }
 
 
-void alloc_symbols(struct module *module, char *cmd)
+int load_symbol(char *buffer, void *element, void *context)
 {
-    char buffer[1024];
-    FILE *fp;
+    struct symbol *symbol = (struct symbol *)element;
+    char type[2], name[1024];
+    uintptr_t value;
 
-    if (!*module->path) return;
+    if (sscanf(buffer, "%" PRIxPTR " %1s %1023s", &value, type, name) != 3)
+        return 0;
 
-    sprintf(buffer, "%s | wc -l", cmd);
-    fp = popen(buffer, "r");
-
-    if (fp == NULL) {
-        fprintf(stderr, "Unable to count symbols\n");
-        exit(1);
-    }
-
-    fscanf(fp, "%d", &module->maxsymbols);
-    pclose(fp);
-
-    module->symbols = calloc(module->maxsymbols, sizeof(struct symbol));
-
-    if (!module->symbols) {
-        fprintf(stderr, "Unable to allocate symbols");
-        exit(1);
-    }
+    symbol->value = value;
+    symbol->type = type[0];
+    symbol->name = strdup(name);
+    return 1;
 }
 
 
 void load_symbols(struct module *module)
 {
-    char buffer[2048];
-    FILE *fp;
+    char cmd[2048];
 
     if (!*module->path) return;
 
-    sprintf(buffer, "nm -ne %s", module->path);
-    alloc_symbols(module, buffer);
+    sprintf(cmd, "nm -ne %s", module->path);
 
-    fp = popen(buffer, "r");
+    module->symbols = (struct symbol *)load_array_from_cmd(
+        cmd, load_symbol, NULL,
+        sizeof(struct symbol), &module->nsymbols, 1000);   /* HACK */
 
-    if (fp == NULL) {
-        fprintf(stderr, "Unable to run nm\n");
+    if (module->symbols == NULL) {
+        fprintf(stderr, "Unable to load symbols");
         exit(1);
     }
 
-    while (fgets(buffer, sizeof(buffer), fp)) {
-        char type[2], name[1024];
-        uintptr_t value;
-
-        if (sscanf(buffer, "%" PRIxPTR " %1s %1023s", &value, type, name) != 3)
-            continue;
-
-        if (module->nsymbols >= module->maxsymbols)
-            break;
-
-        module->symbols[module->nsymbols].value = value;
-        module->symbols[module->nsymbols].type = type[0];
-        module->symbols[module->nsymbols].name = strdup(name);
-        module->nsymbols++;
-    }
-
-    pclose(fp);
+// HACK
+    printf("---- %s ----\n", module->path);
+    print_symbols(module);
 }
 
 
