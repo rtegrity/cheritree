@@ -16,7 +16,6 @@
 #include <cheriintrin.h>
 #endif
 #include "mapping.h"
-#include "module.h"
 #include "symbol.h"
 
 
@@ -34,24 +33,24 @@ void add_mapping_name(void *function, void *stack, void *data, void *heap)
     struct mapping *datamap = find_mapping((uintptr_t)data);
     struct mapping *heapmap = find_mapping((uintptr_t)heap);
 
-    if (!*functionmap->module->name) return;
+    if (!functionmap || !*mapping_getname(functionmap)) return;
 
-    if (!*stackmap->module->name) {
+    if (stackmap && !*mapping_getname(stackmap)) {
         char buf[1024];
-        sprintf(buf, "[%s!stack]", functionmap->module->name);
-        stackmap->module->name = strdup(buf);
+        sprintf(buf, "[%s!stack]", mapping_getname(functionmap));
+        stackmap->namestr = string_alloc(buf);
+     }
+
+    if (datamap && !*mapping_getname(datamap)) {
+        char buf[1024];
+        sprintf(buf, "[%s!data]", mapping_getname(functionmap));
+        datamap->namestr = string_alloc(buf);
     }
 
-    if (!*datamap->module->name) {
+    if (heapmap && !*mapping_getname(heapmap)) {
         char buf[1024];
-        sprintf(buf, "[%s!data]", functionmap->module->name);
-        datamap->module->name = strdup(buf);
-    }
-
-    if (!*heapmap->module->name) {
-        char buf[1024];
-        sprintf(buf, "[%s!heap]", functionmap->module->name);
-        heapmap->module->name = strdup(buf);
+        sprintf(buf, "[%s!heap]", mapping_getname(functionmap));
+        heapmap->namestr = string_alloc(buf);
     }
 
     // HACK TODO - should try and do this even if init isn't called
@@ -67,23 +66,22 @@ void add_mapping_name(void *function, void *stack, void *data, void *heap)
 void print_address(uintptr_t addr)
 {
     struct mapping *mapping = find_mapping(addr);
-    struct module *module = mapping->module;
-    struct symbol *symbol = find_symbol(module, addr);
+    struct symbol *symbol = mapping ? find_symbol(mapping, addr) : NULL;
 
-    if (!*module->name) {
+    if (!mapping || !*mapping_getname(mapping)) {
     //    print_mapping(mapping);
         return;
     }
 
-    size_t offset = addr - ((size_t)module->base + (size_t)symbol->value);
+    size_t offset = addr - ((size_t)mapping_getbase(mapping) + (size_t)symbol->value);
 
-    if (!*module->path)
-        printf("%s+%#zx", module->name, offset);
+    if (!*mapping_getpath(mapping))
+        printf("%s+%#zx", mapping_getname(mapping), offset);
 
     else if (offset)
-        printf("%s!%s+%#zx", module->name, symbol->name, offset);
+        printf("%s!%s+%#zx", mapping_getname(mapping), symbol->name, offset);
 
-    else printf("%s!%s", module->name, symbol->name);
+    else printf("%s!%s", mapping_getname(mapping), symbol->name);
 }
 
 

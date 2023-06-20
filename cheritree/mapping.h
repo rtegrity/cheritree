@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <sys/user.h>
+#include "util.h"
 
 
 /*
@@ -20,7 +21,10 @@ struct mapping {
     int prot;
     int flags;
     int type;
-    struct module *module;
+    int base;
+    int pathstr;
+    int namestr;
+    struct vec symbols;
 };
 
 
@@ -76,10 +80,16 @@ struct mapping {
 #define kvme_to_type(x)         (x)
 
 
-extern void print_mapping(struct mapping *mapping);
-extern void load_mappings();
-extern struct mapping *find_mapping(uintptr_t addr);
-extern void print_mappings();
-extern int check_address_valid(void ***pptr);
+void print_mapping(struct mapping *mapping);
+void load_mappings();
+struct mapping *find_mapping(uintptr_t addr);
+void print_mappings();
+int check_address_valid(void ***pptr);
+
+
+char *mapping_getname(struct mapping *mapping);
+char *mapping_getpath(struct mapping *mapping);
+uintptr_t mapping_getbase(struct mapping *mapping);
+
 
 #endif /* _CHERITREE_MAPPING_H_ */

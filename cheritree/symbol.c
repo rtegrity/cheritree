@@ -14,7 +14,7 @@
 #include <cheriintrin.h>
 #endif
 #include "symbol.h"
-#include "module.h"
+#include "mapping.h"
 #include "util.h"
 
 
@@ -25,14 +25,19 @@ void print_symbol(struct symbol *symbol)
 }
 
 
-int load_symbol(char *buffer, void *element, void *context)
+int load_symbol(char *buffer, struct vec *v)
 {
-    struct symbol *symbol = (struct symbol *)element;
     char type[2], name[1024];
     uintptr_t value;
 
     if (sscanf(buffer, "%" PRIxPTR " %1s %1023s", &value, type, name) != 3)
-        return 0;
+        return 1;
+
+    struct symbol *symbol = (struct symbol *)vec_alloc(v, 1);
+    if (!symbol) return 0;
+
+    symbol->namestr = string_alloc(name);
+    if (!symbol->namestr) return 0;
 
     symbol->value = value;
     symbol->type = type[0];
@@ -41,45 +46,48 @@ int load_symbol(char *buffer, void *element, void *context)
 }
 
 
-void load_symbols(struct module *module)
+void load_symbols(struct vec *symbols, const char *path)
 {
     char cmd[2048];
 
-    if (!*module->path) return;
+    if (!*path) return;
 
-    sprintf(cmd, "nm -ne %s", module->path);
+    sprintf(cmd, "nm -ne %s", path);
+    vec_init(symbols, sizeof(struct symbol), 1000);
 
-    module->symbols = (struct symbol *)load_array_from_cmd(
-        cmd, load_symbol, NULL,
-        sizeof(struct symbol), &module->nsymbols, 1000);   /* HACK */
-
-    if (module->symbols == NULL) {
+    if (!load_array_from_cmd(cmd, load_symbol, symbols)) {
         fprintf(stderr, "Unable to load symbols");
         exit(1);
     }
 
 // HACK
-    printf("---- %s ----\n", module->path);
-    print_symbols(module);
+    printf("---- %s ----\n", path);
+    print_symbols(symbols);
 }
 
 
 struct symbol *
-find_symbol(struct module *module, uintptr_t addr)
+find_symbol(struct mapping *mapping, uintptr_t addr)
 {
     static struct symbol base_symbol = { 0, "base", ' ' };
+    struct mapping *base = &mapping[mapping->base];
+    struct vec *symbols = &base->symbols;
     int i = 0;
 
-    for (; i < module->nsymbols; i++)
-        if (module->base + (size_t)module->symbols[i].value > addr) break;
+    for (; i < vec_getcount(symbols); i++) {
+        struct symbol *sym = (struct symbol *)vec_get(symbols, i);
+        if (sym && base->start + (size_t)sym->value > addr) break;
+    }
 
-    return (i) ? &module->symbols[i-1] : &base_symbol;
+    return (i) ? (struct symbol *)vec_get(symbols, i) : &base_symbol;
 }
 
 
-void print_symbols(struct module *module)
+void print_symbols(struct vec *symbols)
 {
-    for (int i = 0; i < module->nsymbols; i++)
-        printf("%#" PRIxPTR " %c %s\n", module->symbols[i].value,
-            module->symbols[i].type, module->symbols[i].name);
+    for (int i = 0; i < vec_getcount(symbols); i++) {
+        struct symbol *sym = (struct symbol *)vec_get(symbols, i);
+        printf("%#" PRIxPTR " %c %s\n", sym->value, sym->type,
+            string_get(sym->namestr));
+    }
 }

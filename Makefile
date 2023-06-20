@@ -13,10 +13,10 @@ shared:	main.c lib1.so lib2.so cheritree.so
 comp:	main.c lib1.so lib2.so cheritree.so
 	cc $(CFLAGS) $(C18NFLAGS) main.c -o comp lib1.so lib2.so cheritree.so
 
-cheritree.so: cheritree/cheritree.c cheritree/saveregs.S cheritree/mapping.c cheritree/symbol.c cheritree/module.c \
+cheritree.so: cheritree/cheritree.c cheritree/saveregs.S cheritree/mapping.c cheritree/symbol.c \
 		cheritree/util.c
 	cc -fPIC -shared $(CFLAGS) -Wl,--version-script=cheritree/cheritree.map cheritree/cheritree.c cheritree/saveregs.S \
-		cheritree/mapping.c cheritree/symbol.c cheritree/module.c cheritree/util.c -o cheritree.so -lprocstat
+		cheritree/mapping.c cheritree/symbol.c cheritree/util.c -o cheritree.so -lprocstat
 
 lib1.so: lib1/lib1.c
 	cc -fPIC -shared $(CFLAGS) -Wl,--version-script=lib1/lib1.map lib1/lib1.c -o lib1.so

@@ -8,17 +8,18 @@
 #define _CHERITREE_SYMBOL_H_
 
 #include <stdint.h>
-#include "module.h"
+#include "mapping.h"
 
 struct symbol {
     uintptr_t value;
     char *name;
     char type;
+    int namestr;
 };
 
-extern void load_symbols(struct module *module);
-extern void print_symbols(struct module *module);
-extern struct symbol *find_symbol(struct module *module, uintptr_t addr);
-extern void print_symbol(struct symbol *symbol);
+void load_symbols(struct vec *symbols, const char *path);
+void print_symbols(struct vec *symbols);
+struct symbol *find_symbol(struct mapping *mapping, uintptr_t addr);
+void print_symbol(struct symbol *symbol);
 
 #endif /* _CHERITREE_SYMBOL_H_ */

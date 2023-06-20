@@ -16,8 +16,8 @@
 #ifdef __CHERI_PURE_CAPABILITY__
 #include <cheriintrin.h>
 #endif
-#include "module.h"
 #include "mapping.h"
+#include "symbol.h"
 #include "util.h"
 
 
@@ -39,7 +39,8 @@ void print_mapping(struct mapping *mapping)
     printf("%#" PRIxPTR "-%#" PRIxPTR " %s %s %s %s\n",
         mapping->start, mapping->end, prot_to_str(prot, mapping->prot),
         flags_to_str(flags, mapping->flags), type_to_str(type, mapping->type),
-        (*mapping->module->path ? mapping->module->path : mapping->module->name));
+        (*mapping_getpath(mapping) ? mapping_getpath(mapping) :
+            mapping_getname(mapping)));
 }
 
 
@@ -47,6 +48,7 @@ void add_mapping(uintptr_t start, uintptr_t end,
     int prot, int flags, int type, char *path)
 {
     int i = 0;
+    char *cp;
 
     for (; i < nmappings; i++) {
         if (start >= mappings[i].end) continue;
@@ -74,10 +76,25 @@ void add_mapping(uintptr_t start, uintptr_t end,
     mappings[i].prot = prot;
     mappings[i].flags = flags;
     mappings[i].type = type;
-    mappings[i].module = add_module(path, start);
+
+    cp = strrchr(path, '/');
+    mappings[i].pathstr = string_alloc(path);
+    mappings[i].namestr = string_alloc(cp ? cp+1 : path);
+
+    for (int j = 0; j < nmappings; j++) {
+        struct mapping *mp = &mappings[j];
+        if (!strcmp(path, string_get(mp->pathstr))) {
+            mappings[i].base = i - j;
+            break;
+        }
+    }
+
+    if (!mappings[i].base && *path)
+        load_symbols(&mappings[i].symbols, path);
 }
 
 
+#if 0
 void load_mappings_procstat()
 {
     struct procstat *stat = procstat_open_sysctl();
@@ -118,9 +135,9 @@ void load_mappings_procstat()
     procstat_freeprocs(stat, proc);
     procstat_close(stat);
 }
+#endif
 
-
-void load_mappings()
+void load_mappings_run_procstat()
 {
     char buffer[1024];
     FILE *fp;
@@ -151,13 +168,70 @@ void load_mappings()
 }
 
 
+static int load_mapping_procstat(char *buffer, struct vec *v)
+{
+    char prot[6], flags[6], type[3], path[PATH_MAX];
+    uintptr_t start, end;
+    char *cp;
+
+    strcpy(path, "");
+    if (sscanf(buffer, "%*d %" PRIxPTR " %" PRIxPTR
+            " %5s %*d %*d %*d %*d %5s %2s %s", &start, &end, prot, flags,
+            type, path) < 5)
+        return 1;
+
+    struct mapping *mapping = (struct mapping *)vec_alloc(v, 1);
+    if (!mapping) return 0;
+
+    mapping->start = start;
+    mapping->end = end;
+    mapping->prot = str_to_prot(prot);
+    mapping->flags = str_to_flags(flags);
+    mapping->type = str_to_type(type);
+
+    cp = strrchr(path, '/');
+    mapping->pathstr = string_alloc(path);
+    mapping->namestr = string_alloc(cp ? cp+1 : path);
+
+    for (int i = 0; i < vec_getcount(v); i++) {
+        struct mapping *mp = (struct mapping *)vec_get(v, i);
+        if (!strcmp(path, string_get(mp->pathstr))) {
+            mapping->base = mapping - mp;
+            break;
+        }
+    }
+
+    if (!mapping->base && *path)
+        load_symbols(&mapping->symbols, path);
+
+    return 1;
+}
+
+
+void load_mappings()
+{
+    struct vec mappings;
+    char cmd[2048];
+
+    sprintf(cmd, "procstat -v %d", getpid());
+    vec_init(&mappings, sizeof(struct mapping), 1000);
+
+    if (!load_array_from_cmd(cmd, load_mapping_procstat, &mappings)) {
+        fprintf(stderr, "Unable to load mappings");
+        exit(1);        
+    }
+
+printf("---\n");
+    for (int i = 0; i < vec_getcount(&mappings); i++)
+        print_mapping((struct mapping *)vec_get(&mappings, i));
+printf("---\n");
+
+    load_mappings_run_procstat();
+}
+
+
 struct mapping *find_mapping(uintptr_t addr)
 {
-    static struct module unknown_module = { 0, "Unknown", "Unknown" };
-    static struct mapping unknown_mapping = {
-        0, 0, 0, 0, 0, &unknown_module
-    };
-
     for (int i = 0; i < nmappings; i++) {
         if (addr >= mappings[i].end) continue;
         if (addr < mappings[i].start) break;
@@ -172,7 +246,7 @@ struct mapping *find_mapping(uintptr_t addr)
         return &mappings[i];
     }
 
-    return &unknown_mapping;
+    return NULL;
 }
 
 
@@ -205,6 +279,24 @@ int check_address_valid(void ***pptr)
     }
 
     return 0;
+}
+
+
+char *mapping_getname(struct mapping *mapping)
+{
+    return string_get(mapping->namestr);
+}
+
+
+char *mapping_getpath(struct mapping *mapping)
+{
+    return string_get(mapping->pathstr);
+}
+
+
+uintptr_t mapping_getbase(struct mapping *mapping)
+{
+    return mapping[mapping->base].start;
 }
 
 
