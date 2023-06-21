@@ -10,9 +10,6 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
-#include <sys/sysctl.h>
-#include <sys/user.h>
-#include <libprocstat.h>
 #ifdef __CHERI_PURE_CAPABILITY__
 #include <cheriintrin.h>
 #endif
@@ -41,50 +38,6 @@ void print_mapping(struct mapping *mapping)
         (*mapping_getpath(mapping) ? mapping_getpath(mapping) :
             mapping_getname(mapping)), mapping[mapping->base].start);
 }
-
-
-#if 0
-void load_mappings_procstat()
-{
-    struct procstat *stat = procstat_open_sysctl();
-    unsigned int count;
-
-    if (!stat) {
-        fprintf(stderr, "Unable to open procstat\n");
-        exit(1);
-    }
-
-    struct kinfo_proc *proc = procstat_getprocs(stat,
-        KERN_PROC_PID, getpid(), &count);
-
-    if (!proc || count != 1) {
-        procstat_close(stat);
-        fprintf(stderr, "Unable to getprocs\n");
-        exit(1);
-    }
-
-    struct kinfo_vmentry *map = procstat_getvmmap(stat,
-        proc, &count);
-
-    if (!map || count == 0) {
-        procstat_freeprocs(stat, proc);
-        procstat_close(stat);
-        fprintf(stderr, "Unable to get vmmap\n");
-        exit(1);
-    }
-
-    for (int i = 0; i < count; i++) {
-        add_mapping(map[i].kve_start, map[i].kve_end,
-            kvme_to_prot(map[i].kve_protection),
-            kvme_to_flags(map[i].kve_flags),
-            kvme_to_type(map[i].kve_type), map[i].kve_path);
-    }
-
-    procstat_freevmmap(stat, map);
-    procstat_freeprocs(stat, proc);
-    procstat_close(stat);
-}
-#endif
 
 
 static void update_mappings(struct vec *v)

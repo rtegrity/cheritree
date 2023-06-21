@@ -16,15 +16,10 @@ nm --print-size --extern-only lib1.so
 
 ## Capability Tree
 
-Rework with libprocstat and libelf.
 Use ptraddr_t instead of size_t ??
 
 ## CheriTree
 
-Try in order - dlopen, /proc and run procstat
-Try and avoid hard linking in procstat and libelf etc.
-Dynamically increase array size with realloc
-replace function
 Unit test code
 
 ## Library init routines
