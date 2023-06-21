@@ -18,24 +18,27 @@
 #define load_symbols        cheritree_load_symbols
 #define print_symbols       cheritree_print_symbols
 #define find_symbol         cheritree_find_symbol
+#define find_type           cheritree_find_type
+
 
 /*
  *  Symbol store.
  */
 struct image {
-    struct vec symbols;
-    string_t pathstr;
+    struct vec symbols;     // Symbols
+    string_t pathstr;       // Pathname
 };
 
 struct symbol {
-    uintptr_t value;
-    string_t namestr;
-    char type;
+    uintptr_t value;        // Symbol value
+    string_t namestr;       // Symbol name
+    char type;              // Type
 };
 
 void load_symbols(const char *path);
 void print_symbols(const char *path);
 struct symbol *find_symbol(const struct mapping *mapping, uintptr_t addr);
+const char *find_type(const struct mapping *mapping, uintptr_t start, uintptr_t end);
 
 
 /*

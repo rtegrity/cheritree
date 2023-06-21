@@ -14,6 +14,17 @@
 
 
 /*
+ *  Namespace definitions
+ */
+
+#define load_mappings           cheritree_load_mappings
+#define find_mapping            find_mapping
+#define resolve_mapping         resolve_mapping
+#define print_mappings          print_mappings
+#define check_address_valid     cheritree_check_address_valid
+
+
+/*
  *  Memory mapping.
  */
 struct mapping {
@@ -26,6 +37,12 @@ struct mapping {
     string_t pathstr;
     string_t namestr;
 };
+
+void load_mappings();
+struct mapping *find_mapping(uintptr_t addr);
+struct mapping *resolve_mapping(uintptr_t addr);
+void print_mappings();
+int check_address_valid(void ***pptr);
 
 
 /*
@@ -78,12 +95,6 @@ struct mapping {
 #define CT_TYPE_MAXLEN          3
 
 #define kvme_to_type(x)         (x)
-
-
-void load_mappings();
-struct mapping *find_mapping(uintptr_t addr);
-void print_mappings();
-int check_address_valid(void ***pptr);
 
 
 /*

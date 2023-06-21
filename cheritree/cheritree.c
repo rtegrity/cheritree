@@ -66,7 +66,7 @@ void add_mapping_name(void *function, void *stack, void *data, void *heap)
 void print_address(uintptr_t addr)
 {
     struct mapping *mapping = find_mapping(addr);
-    struct symbol *symbol = mapping ? find_symbol(mapping, addr) : NULL;
+    struct symbol *symbol = find_symbol(mapping, addr);
 
     if (!mapping || !*getname(mapping)) {
     //    print_mapping(mapping);
@@ -138,6 +138,7 @@ void print_capability_tree(void *vaddr, char *prefix)
 void find_memory_references()
 {
     void *regs[32], *ptr;
+    int i;
 
     saveregs(regs);
 
@@ -148,7 +149,7 @@ void find_memory_references()
     if (cheri_is_valid(ptr))
         print_capability_tree(ptr, "pcc");
 
-    for (int i = 1; i < sizeof(regs) / sizeof(regs[0]); i++)
+    for (i = 1; i < sizeof(regs) / sizeof(regs[0]); i++)
         if (cheri_is_valid(regs[i])) {
             char prefix[20];
             sprintf(prefix, "c%d", i);
