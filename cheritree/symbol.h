@@ -12,9 +12,8 @@
 
 struct symbol {
     uintptr_t value;
-    char *name;
-    char type;
     int namestr;
+    char type;
 };
 
 void load_symbols(struct vec *symbols, const char *path);

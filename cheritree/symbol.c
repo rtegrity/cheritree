@@ -21,7 +21,7 @@
 void print_symbol(struct symbol *symbol)
 {
     printf("%#" PRIxPTR " %c %s\n", symbol->value,
-        symbol->type, symbol->name);
+        symbol->type, string_get(symbol->namestr));
 }
 
 
@@ -41,7 +41,6 @@ int load_symbol(char *buffer, struct vec *v)
 
     symbol->value = value;
     symbol->type = type[0];
-    symbol->name = strdup(name);
     return 1;
 }
 
@@ -69,7 +68,7 @@ void load_symbols(struct vec *symbols, const char *path)
 struct symbol *
 find_symbol(struct mapping *mapping, uintptr_t addr)
 {
-    static struct symbol base_symbol = { 0, "base", ' ' };
+    static struct symbol base_symbol = { 0, 0, ' ' };
     struct mapping *base = &mapping[mapping->base];
     struct vec *symbols = &base->symbols;
     int i = 0;

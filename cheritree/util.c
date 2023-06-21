@@ -63,9 +63,11 @@ int load_array_from_path(const char *path,
 
 
 /*
- *  String store, grown on demand. Strings are referenced by
- *  offset to reduce the number of capabilities introduced
- *  into the address space.
+ *  String store, grown on demand.
+ *
+ *  Note: Strings are referenced by offset to minimise the number
+ *  of capabilities introduced. There is no need to support deletion
+ *  since the address space is assumed to be relatively static.
  */
 int string_alloc(const char *s)
 {
@@ -115,8 +117,8 @@ void *vec_alloc(struct vec *v, int n)
         char *ap = realloc(v->addr, (v->maxcount + alloc) * v->size);
 
         if (ap == NULL) {
-            vec_delete(v);
-            return NULL;
+            fprintf(stderr, "Unable to allocate memory");
+            exit(1);
         }
 
         v->addr = ap;
