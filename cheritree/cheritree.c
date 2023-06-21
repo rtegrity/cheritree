@@ -33,24 +33,24 @@ void add_mapping_name(void *function, void *stack, void *data, void *heap)
     struct mapping *datamap = find_mapping((uintptr_t)data);
     struct mapping *heapmap = find_mapping((uintptr_t)heap);
 
-    if (!functionmap || !*mapping_getname(functionmap)) return;
+    if (!functionmap || !*getname(functionmap)) return;
 
-    if (stackmap && !*mapping_getname(stackmap)) {
+    if (stackmap && !*getname(stackmap)) {
         char buf[1024];
-        sprintf(buf, "[%s!stack]", mapping_getname(functionmap));
-        stackmap->namestr = string_alloc(buf);
+        sprintf(buf, "[%s!stack]", getname(functionmap));
+        setname(stackmap, buf);
      }
 
-    if (datamap && !*mapping_getname(datamap)) {
+    if (datamap && !*getname(datamap)) {
         char buf[1024];
-        sprintf(buf, "[%s!data]", mapping_getname(functionmap));
-        datamap->namestr = string_alloc(buf);
+        sprintf(buf, "[%s!data]", getname(functionmap));
+        setname(datamap, buf);
     }
 
-    if (heapmap && !*mapping_getname(heapmap)) {
+    if (heapmap && !*getname(heapmap)) {
         char buf[1024];
-        sprintf(buf, "[%s!heap]", mapping_getname(functionmap));
-        heapmap->namestr = string_alloc(buf);
+        sprintf(buf, "[%s!heap]", getname(functionmap));
+        setname(heapmap, buf);
     }
 
     // HACK TODO - should try and do this even if init isn't called
@@ -68,20 +68,24 @@ void print_address(uintptr_t addr)
     struct mapping *mapping = find_mapping(addr);
     struct symbol *symbol = mapping ? find_symbol(mapping, addr) : NULL;
 
-    if (!mapping || !*mapping_getname(mapping)) {
+    if (!mapping || !*getname(mapping)) {
     //    print_mapping(mapping);
         return;
     }
 
-    size_t offset = addr - ((size_t)mapping_getbase(mapping) + (size_t)symbol->value);
+    size_t offset = addr - (size_t)mapping_getbase(mapping);
 
-    if (!*mapping_getpath(mapping) || !*string_get(symbol->namestr))
-        printf("%s+%#zx", mapping_getname(mapping), offset);
+    if (!*getpath(mapping) || !symbol || !*getname(symbol)) {
+        printf("%s+%#zx", getname(mapping), offset);
+        return;
+    }
 
-    else if (offset)
-        printf("%s!%s+%#zx", mapping_getname(mapping), string_get(symbol->namestr), offset);
+    offset -= (size_t)symbol->value;
 
-    else printf("%s!%s", mapping_getname(mapping), string_get(symbol->namestr));
+    if (offset)
+        printf("%s!%s+%#zx", getname(mapping), getname(symbol), offset);
+
+    else printf("%s!%s", getname(mapping), getname(symbol));
 }
 
 

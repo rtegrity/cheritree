@@ -28,58 +28,69 @@ static int str_to_type(const char *str);
 static char *type_to_str(char *str, int type);
 
 
-void print_mapping(struct mapping *mapping)
+static void print_mapping(struct mapping *mapping)
 {
     char prot[CT_PROT_MAXLEN], flags[CT_FLAGS_MAXLEN], type[CT_TYPE_MAXLEN];
 
     printf("%#" PRIxPTR "-%#" PRIxPTR " %s %s %s %s [base %#" PRIxPTR "]\n",
         mapping->start, mapping->end, prot_to_str(prot, mapping->prot),
         flags_to_str(flags, mapping->flags), type_to_str(type, mapping->type),
-        (*mapping_getpath(mapping) ? mapping_getpath(mapping) :
-            mapping_getname(mapping)), mapping[mapping->base].start);
+        (*getpath(mapping) ? getpath(mapping) : getname(mapping)),
+        mapping[mapping->base].start);
 }
 
 
 static void update_mappings(struct vec *v)
 {
-    for (int i = 0; i < vec_getcount(v); i++) {
-        struct mapping *mapping = (struct mapping *)vec_get(v, i);
+    for (int i = 0; i < getcount(v); i++) {
+        struct mapping *mapping = getmapping(v, i);
 
-        for (int j = 0; j < vec_getcount(&mappings); j++) {
-            struct mapping *mp = (struct mapping *)vec_get(&mappings, j);
+        for (int j = 0; j < getcount(&mappings); j++) {
+            struct mapping *mp = getmapping(&mappings, j);
 
             if (mp->start >= mapping->end) break;
 
             if (mp->start == mapping->start && mp->end == mapping->end &&
-                !strcmp(string_get(mp->pathstr), string_get(mapping->pathstr))) {
+                !strcmp(getpath(mp), getpath(mapping))) {
                 mapping->namestr = mp->namestr;
-                mapping->symbols = mp->symbols;
-                vec_init(&mp->symbols, 0, 0);
                 break;
             }
         }
-
-        if (*string_get(mapping->pathstr))
-            for (int j = 0; j < i; j++) {
-                struct mapping *mp = (struct mapping *)vec_get(v, j);
-
-                if (!strcmp(string_get(mapping->pathstr), string_get(mp->pathstr))) {
-                    mapping->base =  j - i;
-                    break;
-                }
-            }
-
-        if (!mapping->base && *string_get(mapping->pathstr))
-            load_symbols(&mapping->symbols, string_get(mapping->pathstr));
-    }
-
-    for (int j = 0; j < vec_getcount(&mappings); j++) {
-        struct mapping *mp = (struct mapping *)vec_get(&mappings, j);
-        vec_delete(&mp->symbols);
     }
 
     vec_delete(&mappings);
     mappings = *v;
+}
+
+
+static int add_mapping(struct vec *v, uintptr_t start, uintptr_t end,
+    int prot, int flags, int type, char *path)
+{
+    struct mapping *mapping = (struct mapping *)vec_alloc(v, 1);
+    char *cp;
+
+    mapping->start = start;
+    mapping->end = end;
+    mapping->prot = prot;
+    mapping->flags = flags;
+    mapping->type = type;
+
+    if (!*path) return 1;
+
+    cp = strrchr(path, '/');
+    setpath(mapping, path);
+    setname(mapping, cp ? cp+1 : path);
+
+    for (int i = 0; i < getcount(v); i++) {
+        struct mapping *mp = getmapping(v, i);
+        if (!strcmp(getpath(mp), path)) {
+            mapping->base = mp - mapping;
+            return 1;
+        }
+    }
+
+    load_symbols(path);
+    return 1;
 }
 
 
@@ -95,19 +106,8 @@ static int load_mapping_procstat(char *buffer, struct vec *v)
             type, path) < 5)
         return 1;
 
-    struct mapping *mapping = (struct mapping *)vec_alloc(v, 1);
-    if (!mapping) return 0;
-
-    mapping->start = start;
-    mapping->end = end;
-    mapping->prot = str_to_prot(prot);
-    mapping->flags = str_to_flags(flags);
-    mapping->type = str_to_type(type);
-
-    cp = strrchr(path, '/');
-    mapping->pathstr = string_alloc(path);
-    mapping->namestr = string_alloc(cp ? cp+1 : path);
-    return 1;
+    return add_mapping(v, start, end, str_to_prot(prot),
+        str_to_flags(flags), str_to_type(type), path);
 }
 
 
@@ -130,8 +130,8 @@ void load_mappings()
 
 struct mapping *find_mapping(uintptr_t addr)
 {
-    for (int i = 0; i < vec_getcount(&mappings); i++) {
-        struct mapping *mp = (struct mapping *)vec_get(&mappings, i);
+    for (int i = 0; i < getcount(&mappings); i++) {
+        struct mapping *mp = getmapping(&mappings, i);
         if (addr >= mp->end) continue;
         if (addr < mp->start) break;
         return mp;
@@ -139,8 +139,8 @@ struct mapping *find_mapping(uintptr_t addr)
 
     load_mappings();
 
-    for (int i = 0; i < vec_getcount(&mappings); i++) {
-        struct mapping *mp = (struct mapping *)vec_get(&mappings, i);
+    for (int i = 0; i < getcount(&mappings); i++) {
+        struct mapping *mp = getmapping(&mappings, i);
         if (addr >= mp->end) continue;
         if (addr < mp->start) break;
         return mp;
@@ -152,10 +152,10 @@ struct mapping *find_mapping(uintptr_t addr)
 
 void print_mappings()
 {
-    load_mappings();
+    if (!mappings.addr) load_mappings();
 
-    for (int i = 0; i < vec_getcount(&mappings); i++) {
-        struct mapping *mp = (struct mapping *)vec_get(&mappings, i);
+    for (int i = 0; i < getcount(&mappings); i++) {
+        struct mapping *mp = getmapping(&mappings, i);
 
         if (mp->prot != CT_PROT_NONE)
             print_mapping(mp);
@@ -167,8 +167,8 @@ int check_address_valid(void ***pptr)
 {
     uintptr_t addr = (uintptr_t)*pptr;
 
-    for (int i = 0; i < vec_getcount(&mappings); i++) {
-        struct mapping *mp = (struct mapping *)vec_get(&mappings, i);
+    for (int i = 0; i < getcount(&mappings); i++) {
+        struct mapping *mp = getmapping(&mappings, i);
 
         if (addr >= mp->end) continue;
         if (addr < mp->start) break;
@@ -182,18 +182,6 @@ int check_address_valid(void ***pptr)
     }
 
     return 0;
-}
-
-
-char *mapping_getname(struct mapping *mapping)
-{
-    return string_get(mapping->namestr);
-}
-
-
-char *mapping_getpath(struct mapping *mapping)
-{
-    return string_get(mapping->pathstr);
 }
 
 

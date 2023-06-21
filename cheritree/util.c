@@ -69,7 +69,7 @@ int load_array_from_path(const char *path,
  *  of capabilities introduced. There is no need to support deletion
  *  since the address space is assumed to be relatively static.
  */
-int string_alloc(const char *s)
+string_t string_alloc(const char *s)
 {
     char *addr;
 
@@ -80,23 +80,21 @@ int string_alloc(const char *s)
  
     addr = vec_alloc(&strings, strlen(s) + 1);
 
-    if (!addr) {
-        fprintf(stderr, "Unable to allocate string\n");
-        exit(1);
-    }
-
-    return (int)(strcpy(addr, s) - strings.addr + 1);
+    return (string_t)(strcpy(addr, s) - strings.addr + 1);
 }
 
 
-char *string_get(int offset)
+char *string_get(string_t s)
 {
-    return (offset) ? strings.addr + offset - 1 : "";
+    return (s) ? strings.addr + s - 1 : "";
 }
 
 
 /*
  *  Linear vector, grown on demand.
+ *
+ *  Note: Nemory allocation failures will result in the program
+ *  exiting.
  */
 void vec_init(struct vec *v, size_t size, int expect)
 {
@@ -117,7 +115,7 @@ void *vec_alloc(struct vec *v, int n)
         char *ap = realloc(v->addr, (v->maxcount + alloc) * v->size);
 
         if (ap == NULL) {
-            fprintf(stderr, "Unable to allocate memory");
+            fprintf(stderr, "CheriTree: Unable to allocate memory");
             exit(1);
         }
 
@@ -130,12 +128,6 @@ void *vec_alloc(struct vec *v, int n)
 
     memset(addr, 0, n * v->size);
     return addr;
-}
-
-
-int vec_getcount(struct vec *v)
-{
-    return v->count;
 }
 
 

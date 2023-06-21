@@ -22,9 +22,8 @@ struct mapping {
     int flags;
     int type;
     int base;
-    int pathstr;
-    int namestr;
-    struct vec symbols;
+    string_t pathstr;
+    string_t namestr;
 };
 
 
@@ -80,16 +79,13 @@ struct mapping {
 #define kvme_to_type(x)         (x)
 
 
-void print_mapping(struct mapping *mapping);
 void load_mappings();
 struct mapping *find_mapping(uintptr_t addr);
 void print_mappings();
 int check_address_valid(void ***pptr);
 
-
-char *mapping_getname(struct mapping *mapping);
-char *mapping_getpath(struct mapping *mapping);
 uintptr_t mapping_getbase(struct mapping *mapping);
 
+#define getmapping(v,i)     (struct mapping *)vec_get((v),(i))
 
 #endif /* _CHERITREE_MAPPING_H_ */
