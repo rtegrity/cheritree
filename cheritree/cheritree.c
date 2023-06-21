@@ -73,7 +73,7 @@ void print_address(uintptr_t addr)
         return;
     }
 
-    size_t offset = addr - (size_t)mapping_getbase(mapping);
+    size_t offset = addr - (size_t)getbase(mapping);
 
     if (!*getpath(mapping) || !symbol || !*getname(symbol)) {
         printf("%s+%#zx", getname(mapping), offset);

@@ -11,6 +11,22 @@
 #include "mapping.h"
 #include "util.h"
 
+
+/*
+ *  Namespace definitions
+ */
+#define load_symbols        cheritree_load_symbols
+#define print_symbols       cheritree_print_symbols
+#define find_symbol         cheritree_find_symbol
+
+/*
+ *  Symbol store.
+ */
+struct image {
+    struct vec symbols;
+    string_t pathstr;
+};
+
 struct symbol {
     uintptr_t value;
     string_t namestr;
@@ -19,8 +35,12 @@ struct symbol {
 
 void load_symbols(const char *path);
 void print_symbols(const char *path);
-struct symbol *find_symbol(struct mapping *mapping, uintptr_t addr);
+struct symbol *find_symbol(const struct mapping *mapping, uintptr_t addr);
 
+
+/*
+ *  Access functions.
+ */
 #define getsymbol(v,i)      (struct symbol *)vec_get((v),(i))
 #define getimage(v,i)       (struct image *)vec_get((v),(i))
 

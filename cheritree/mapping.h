@@ -8,6 +8,7 @@
 #define _CHERITREE_MAPPING_H_
 
 #include <stdint.h>
+#include <unistd.h>
 #include <sys/user.h>
 #include "util.h"
 
@@ -84,8 +85,11 @@ struct mapping *find_mapping(uintptr_t addr);
 void print_mappings();
 int check_address_valid(void ***pptr);
 
-uintptr_t mapping_getbase(struct mapping *mapping);
 
+/*
+ *  Access functions.
+ */
 #define getmapping(v,i)     (struct mapping *)vec_get((v),(i))
+#define getbase(m)          ((m) ? (m)[(m)->base].start : 0)
 
 #endif /* _CHERITREE_MAPPING_H_ */

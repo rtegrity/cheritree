@@ -39,7 +39,7 @@ struct vec {
 
 void vec_init(struct vec *v, size_t size, int expect);
 void *vec_alloc(struct vec *v, int n);
-void *vec_get(struct vec *v, int index);
+void *vec_get(const struct vec *v, int index);
 void vec_trim(struct vec *v);
 void vec_delete(struct vec *v);
 
@@ -50,7 +50,7 @@ void vec_delete(struct vec *v);
 typedef int string_t;
 
 string_t string_alloc(const char *s);
-char *string_get(string_t s);
+const char *string_get(string_t s);
 
 
 /*

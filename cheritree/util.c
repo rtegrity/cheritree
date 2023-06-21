@@ -73,7 +73,7 @@ string_t string_alloc(const char *s)
 {
     char *addr;
 
-    if (!s) return 0;
+    if (!s || !*s) return 0;
 
     if (!strings.addr)
         vec_init(&strings, sizeof(char), 4096);
@@ -84,7 +84,7 @@ string_t string_alloc(const char *s)
 }
 
 
-char *string_get(string_t s)
+const char *string_get(string_t s)
 {
     return (s) ? strings.addr + s - 1 : "";
 }
@@ -131,7 +131,7 @@ void *vec_alloc(struct vec *v, int n)
 }
 
 
-void *vec_get(struct vec *v, int index)
+void *vec_get(const struct vec *v, int index)
 {
     return (v->addr) ? v->addr + (index * v->size) : NULL;
 }

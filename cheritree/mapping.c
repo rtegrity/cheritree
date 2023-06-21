@@ -185,12 +185,6 @@ int check_address_valid(void ***pptr)
 }
 
 
-uintptr_t mapping_getbase(struct mapping *mapping)
-{
-    return mapping[mapping->base].start;
-}
-
-
 /*
  *  Convert access protection.
  */
