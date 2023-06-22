@@ -75,8 +75,8 @@ int main (int argc, char **argv)
 
     check_string_arg();
 
-//  find_memory_references();
+print_mappings();
+  find_memory_references();
 
-    print_mappings();
     return 0;
 }

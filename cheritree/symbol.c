@@ -130,6 +130,6 @@ struct symbol *find_symbol(const struct mapping *mapping, uintptr_t addr)
         if (base + (size_t)sym->value > addr) break;
     }
 
-    return (i) ? getsymbol(&image->symbols, i) : NULL;
+    return (i) ? getsymbol(&image->symbols, i-1) : NULL;
 }
 

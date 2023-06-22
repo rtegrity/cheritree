@@ -26,11 +26,10 @@ static void *printed[8192];
 static int nprinted;
 
 
-void add_mapping_name(void *function, void *stack, void *data, void *heap)
+void add_mapping_name(void *function, void *stack, void *heap)
 {
     struct mapping *functionmap = find_mapping((uintptr_t)function);
     struct mapping *stackmap = find_mapping((uintptr_t)stack);
-    struct mapping *datamap = find_mapping((uintptr_t)data);
     struct mapping *heapmap = find_mapping((uintptr_t)heap);
 
     if (!functionmap || !*getname(functionmap)) return;
@@ -40,12 +39,6 @@ void add_mapping_name(void *function, void *stack, void *data, void *heap)
         sprintf(buf, "[%s!stack]", getname(functionmap));
         setname(stackmap, buf);
      }
-
-    if (datamap && !*getname(datamap)) {
-        char buf[1024];
-        sprintf(buf, "[%s!data]", getname(functionmap));
-        setname(datamap, buf);
-    }
 
     if (heapmap && !*getname(heapmap)) {
         char buf[1024];
@@ -57,7 +50,7 @@ void add_mapping_name(void *function, void *stack, void *data, void *heap)
     if (function != &add_mapping_name) {
         static int data;
         char *cp = malloc(1);
-        add_mapping_name(&add_mapping_name, &cp, &data, cp);
+        add_mapping_name(&add_mapping_name, &cp, cp);
         free(cp);
     }
 }
@@ -65,15 +58,17 @@ void add_mapping_name(void *function, void *stack, void *data, void *heap)
 
 void print_address(uintptr_t addr)
 {
-    struct mapping *mapping = find_mapping(addr);
-    struct symbol *symbol = find_symbol(mapping, addr);
+    struct mapping *mapping = resolve_mapping(addr);
+    struct symbol *symbol;
+    size_t offset;
 
     if (!mapping || !*getname(mapping)) {
     //    print_mapping(mapping);
         return;
     }
 
-    size_t offset = addr - (size_t)getbase(mapping);
+    symbol = find_symbol(mapping, addr);
+    offset = addr - (size_t)getbase(mapping);
 
     if (!*getpath(mapping) || !symbol || !*getname(symbol)) {
         printf("%s+%#zx", getname(mapping), offset);
