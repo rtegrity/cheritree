@@ -82,12 +82,16 @@ void load_symbols(const char *path)
 
     vec_init(&image->symbols, sizeof(struct symbol), 1024);
     setpath(image, path);
-    sprintf(cmd, "nm -ne %s", path);
 
-    if (!load_array_from_cmd(cmd, load_symbol, &image->symbols)) {
-        fprintf(stderr, "Unable to load symbols");
-        exit(1);
-    }
+    sprintf(cmd, "nm -ne %s 2>/dev/null", path);
+    if (load_array_from_cmd(cmd, load_symbol, &image->symbols)) return;
+
+    // Retry with dynamic symbols
+    sprintf(cmd, "nm -Dne %s", path);
+    if (load_array_from_cmd(cmd, load_symbol, &image->symbols)) return;
+
+    fprintf(stderr, "Unable to load symbols");
+    exit(1);
 }
 
 
