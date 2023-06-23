@@ -62,10 +62,7 @@ void print_address(uintptr_t addr)
     struct symbol *symbol;
     size_t offset;
 
-    if (!mapping || !*getname(mapping)) {
-    //    print_mapping(mapping);
-        return;
-    }
+    if (!mapping || !*getname(mapping)) return;
 
     symbol = find_symbol(mapping, addr);
     offset = addr - (size_t)getbase(mapping);
@@ -117,14 +114,20 @@ void print_capability_tree(void *vaddr, char *prefix)
         void **ptr = (void **)((char *)vaddr - ((size_t)vaddr - cheri_align_up(cheri_base_get(vaddr), sizeof(void *))));
         uintptr_t end = cheri_align_down(cheri_base_get(ptr) + cheri_length_get(ptr), sizeof(void *));
 
-        if (!cheri_is_valid(ptr)) return;
+        if (!cheri_is_valid(ptr) /* || !(cheri_base_get(ptr) <= cheri_address_get(ptr)
+            && cheri_address_get(ptr) < cheri_base_get(ptr) + cheri_length_get(ptr))*/) return;
 
         for (; (uintptr_t)ptr < end; ptr++) {
-             if (check_address_valid(&ptr) && cheri_is_valid(*ptr)) {
+            void *p;
+
+            if (!check_address_valid(&ptr, &p)) continue;
+
+            if (cheri_is_valid(p)/* && cheri_base_get(p) <= cheri_address_get(p)
+                    && cheri_address_get(p) < cheri_base_get(p) + cheri_length_get(p)*/) {
                 char pfx[200];
                 sprintf(pfx, "  %s", prefix);
-                print_capability_tree(*ptr, pfx);
-            }           
+                print_capability_tree(p, pfx);
+            }
         }
     }
 }

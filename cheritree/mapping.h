@@ -27,19 +27,19 @@
  *  Memory mapping.
  */
 struct mapping {
-    uintptr_t start;
-    uintptr_t end;
-    int flags;
-    int base;
-    string_t pathstr;
-    string_t namestr;
+    uintptr_t start;            // Start address
+    uintptr_t end;              // End address
+    int flags;                  // Mapping flags
+    int base;                   // Start of image (offset)
+    string_t pathstr;           // Path string
+    string_t namestr;           // Name string
 };
 
 void load_mappings();
 struct mapping *find_mapping(uintptr_t addr);
 struct mapping *resolve_mapping(uintptr_t addr);
 void print_mappings();
-int check_address_valid(void ***pptr);
+int check_address_valid(void ***pptr, void **paddr);
 
 
 /*

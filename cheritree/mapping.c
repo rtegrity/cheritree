@@ -131,7 +131,7 @@ static void print_mapping(struct mapping *mapping)
 {
     char s[15];
 
-    flags_to_str(getflags(mapping), s, strlen(s));
+    flags_to_str(getflags(mapping), s, sizeof(s));
 
     printf("%#" PRIxPTR "-%#" PRIxPTR " %s %s %s %s [base %#" PRIxPTR "]\n",
         mapping->start, mapping->end, &s[0], &s[6], &s[12],
@@ -261,7 +261,7 @@ void print_mappings()
 }
 
 
-int check_address_valid(void ***pptr)
+int check_address_valid(void ***pptr, void **paddr)
 {
     uintptr_t addr = (uintptr_t)*pptr;
     struct mapping *mapping = resolve_mapping(addr);
@@ -270,9 +270,10 @@ int check_address_valid(void ***pptr)
 
     if (getprot(mapping) == CT_PROT_NONE) {
         *(char **)pptr += (mapping->end - sizeof(void *)) - (size_t)*pptr;
-        return 0;
+         return 0;
     }
 
+    *paddr = **pptr;
     return 1;
 }
 
