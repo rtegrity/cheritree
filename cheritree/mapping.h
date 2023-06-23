@@ -17,10 +17,11 @@
  */
 
 #define load_mappings           cheritree_load_mappings
-#define find_mapping            find_mapping
-#define resolve_mapping         resolve_mapping
-#define print_mappings          print_mappings
+#define find_mapping            cheritree_find_mapping
+#define resolve_mapping         cheritree_resolve_mapping
+#define print_mappings          cheritree_print_mappings
 #define check_address_valid     cheritree_check_address_valid
+#define set_mapping_name        cheritree_set_mapping_name
 
 
 /*
@@ -38,6 +39,8 @@ struct mapping {
 void load_mappings();
 struct mapping *find_mapping(uintptr_t addr);
 struct mapping *resolve_mapping(uintptr_t addr);
+void set_mapping_name(struct mapping *mapping,
+    struct mapping *owner, const char *name);
 void print_mappings();
 int check_address_valid(void ***pptr, void **paddr);
 

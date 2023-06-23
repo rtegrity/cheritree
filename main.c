@@ -75,8 +75,8 @@ int main (int argc, char **argv)
 
     check_string_arg();
 
-print_mappings();
-  find_memory_references();
+    cheritree_print_mappings();
+    cheritree_find_capabilities();
 
     return 0;
 }

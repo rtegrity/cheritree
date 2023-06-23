@@ -136,4 +136,3 @@ struct symbol *find_symbol(const struct mapping *mapping, uintptr_t addr)
 
     return (i) ? getsymbol(&image->symbols, i-1) : NULL;
 }
-

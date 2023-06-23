@@ -38,18 +38,50 @@ struct mapping *find_mapping(uintptr_t addr)
 }
 
 
-static string_t find_name(uintptr_t start, uintptr_t end)
+void set_mapping_name(struct mapping *mapping,
+    struct mapping *owner, const char *name)
 {
-    int i;
+    char buf[2048];
 
-    for (i = 0; i < getcount(&mappings); i++) {
-        struct mapping *mp = getmapping(&mappings, i);
-        if (mp->start >= end) break;
-        if (mp->start == start && mp->end == end && !*getpath(mp))
-            return mp->namestr;
+    if (!name || !*name) return;
+    if (!mapping || *getpath(mapping)) return;
+
+    if (strchr(getname(mapping), '!')) return;
+
+    if (owner && *getname(owner))
+        sprintf(buf, "[%s!%s]", getname(owner), name);
+    
+    else sprintf(buf, "[%s]", name);
+    setname(mapping, buf);
+}
+
+
+static void add_mapping_name(struct mapping *mapping)
+{
+    uintptr_t start = mapping->start, end = mapping->end;
+
+    // Copy any previously identified name
+
+    if (getcount(&mappings)) {
+        struct mapping *mp = find_mapping(start);
+
+        if (mp && mp->start == start && mp->end == end && !*getpath(mp)) {
+            mapping->namestr = mp->namestr;
+            return;
+        }
     }
 
-    return 0;
+    // Check for current stack mapping
+
+    if (start <= (uintptr_t)&mapping && (uintptr_t)&mapping < end) {
+        set_mapping_name(mapping, NULL, "stack");
+        return;
+    }
+
+    // Check for current heap mapping
+
+    if (start <= (uintptr_t)mapping && (uintptr_t)mapping < end)
+        set_mapping_name(mapping, NULL, "heap");
 }
 
 
@@ -66,6 +98,7 @@ static int add_mapping(struct vec *v, uintptr_t start,
     mapping->flags = flags;
 
     // Identify base mapping
+
     for (i = 0; i < getcount(v); i++) {
         struct mapping *mp = getmapping(v, i);
 
@@ -77,6 +110,8 @@ static int add_mapping(struct vec *v, uintptr_t start,
         }
     }
 
+    // Mappings included in base symbols
+
     if (!*path && getprot(mapping) != CT_PROT_NONE) {
         if (base && find_type(base, start, end) != NULL) {
             mapping->base = base - mapping;
@@ -86,7 +121,7 @@ static int add_mapping(struct vec *v, uintptr_t start,
     }
 
     if (!*path) {
-        mapping->namestr = find_name(mapping->start, mapping->end);
+        add_mapping_name(mapping);
         return 1;
     }
 
@@ -96,7 +131,6 @@ static int add_mapping(struct vec *v, uintptr_t start,
     }
 
     cp = strrchr(path, '/');
-
     setpath(mapping, path);
     setname(mapping, cp ? cp+1 : path);
 

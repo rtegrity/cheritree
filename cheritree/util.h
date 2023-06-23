@@ -57,8 +57,8 @@ const char *string_get(string_t s);
  *  Access functions.
  */
 #define getcount(v)     (v)->count
-#define getpath(x)      string_get((x)->pathstr)
-#define getname(x)      string_get((x)->namestr)
+#define getpath(x)      ((x) ? string_get((x)->pathstr) : "")
+#define getname(x)      ((x) ? string_get((x)->namestr) : "")
 #define setname(x,s)    (x)->namestr = string_alloc((s))
 #define setpath(x,s)    (x)->pathstr = string_alloc((s))
 

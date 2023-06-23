@@ -9,15 +9,13 @@
 
 #include <stdlib.h>
 
-extern int print_mappings();
-extern int find_memory_references();
-
-extern void add_mapping_name(void *function, void *stack, void *heap);
+extern int cheritree_print_mappings();
+extern int cheritree_find_capabilities();
+extern void _cheritree_init(void *function, void *stack);
 
 static void cheritree_init() {
-    char *cp = malloc(1);
-    add_mapping_name(&cheritree_init, &cp, cp);
-    free(cp);
+    char *cp;
+    _cheritree_init(&cheritree_init, &cp);
 }
 
 #endif /* _CHERITREE_H_ */
