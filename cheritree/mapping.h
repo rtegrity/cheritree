@@ -13,18 +13,6 @@
 
 
 /*
- *  Namespace definitions
- */
-
-#define load_mappings           cheritree_load_mappings
-#define find_mapping            cheritree_find_mapping
-#define resolve_mapping         cheritree_resolve_mapping
-#define print_mappings          cheritree_print_mappings
-#define check_address_valid     cheritree_check_address_valid
-#define set_mapping_name        cheritree_set_mapping_name
-
-
-/*
  *  Memory mapping.
  */
 struct mapping {
@@ -36,13 +24,11 @@ struct mapping {
     string_t namestr;           // Name string
 };
 
-void load_mappings();
-struct mapping *find_mapping(uintptr_t addr);
-struct mapping *resolve_mapping(uintptr_t addr);
-void set_mapping_name(struct mapping *mapping,
+struct mapping *cheritree_resolve_mapping(uintptr_t addr);
+void cheritree_print_mappings();
+void cheritree_set_mapping_name(struct mapping *mapping,
     struct mapping *owner, const char *name);
-void print_mappings();
-int check_address_valid(void ***pptr, void **paddr);
+int cheritree_check_address_valid(void ***pptr, void **paddr);
 
 
 /*
@@ -92,7 +78,7 @@ int check_address_valid(void ***pptr, void **paddr);
 /*
  *  Access functions.
  */
-#define getmapping(v,i)     (struct mapping *)vec_get((v),(i))
+#define getmapping(v,i)     (struct mapping *)cheritree_vec_get((v),(i))
 #define getbase(m)          ((m) ? (m)[(m)->base].start : 0)
 #define gettype(m)          ((m) ? ((m)->flags & CT_TYPE_MASK) : 0)
 #define getprot(m)          ((m) ? ((m)->flags & CT_PROT_MASK) : 0)

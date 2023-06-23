@@ -14,9 +14,9 @@ static struct vec strings;
 
 
 /*
- *  Load array from FILE handle
+ *  Load vec from FILE handle
  */
-static int load_array(FILE *fp,
+static int load_vec(FILE *fp,
     int (loadelement)(char *line, struct vec *v), struct vec *v)
 {
     while (fp != NULL) {
@@ -29,19 +29,19 @@ static int load_array(FILE *fp,
             break;
     }
 
-    vec_trim(v);
+    cheritree_vec_trim(v);
     return (v->addr != NULL);
 }
 
 
 /*
- *  Load array from command
+ *  Load from command
  */
-int load_array_from_cmd(const char *cmd,
+int cheritree_load_from_cmd(const char *cmd,
     int (loadelement)(char *line, struct vec *v), struct vec *v)
 {
     FILE *fp = popen(cmd, "r");
-    int rc = load_array(fp, loadelement, v);
+    int rc = load_vec(fp, loadelement, v);
 
     if (fp) pclose(fp);
     return rc;
@@ -49,13 +49,13 @@ int load_array_from_cmd(const char *cmd,
 
 
 /*
- *  Load array from path
+ *  Load from path
  */
-int load_array_from_path(const char *path,
+int cheritree_load_from_path(const char *path,
     int (loadelement)(char *line, struct vec *v), struct vec *v)
 {
     FILE *fp = fopen(path, "r");
-    int rc = load_array(fp, loadelement, v);
+    int rc = load_vec(fp, loadelement, v);
 
     if (fp) fclose(fp);
     return rc;
@@ -69,22 +69,22 @@ int load_array_from_path(const char *path,
  *  of capabilities introduced. There is no need to support deletion
  *  since the address space is assumed to be relatively static.
  */
-string_t string_alloc(const char *s)
+string_t cheritree_string_alloc(const char *s)
 {
     char *addr;
 
     if (!s || !*s) return 0;
 
     if (!strings.addr)
-        vec_init(&strings, sizeof(char), 64 * 1024);
+        cheritree_vec_init(&strings, sizeof(char), 64 * 1024);
  
-    addr = vec_alloc(&strings, strlen(s) + 1);
+    addr = cheritree_vec_alloc(&strings, strlen(s) + 1);
 
     return (string_t)(strcpy(addr, s) - strings.addr + 1);
 }
 
 
-const char *string_get(string_t s)
+const char *cheritree_string_get(string_t s)
 {
     return (s) ? strings.addr + s - 1 : "";
 }
@@ -96,7 +96,7 @@ const char *string_get(string_t s)
  *  Note: Nemory allocation failures will result in the program
  *  exiting.
  */
-void vec_init(struct vec *v, size_t size, int expect)
+void cheritree_vec_init(struct vec *v, size_t size, int expect)
 {
     v->addr = NULL;
     v->size = size;
@@ -106,7 +106,7 @@ void vec_init(struct vec *v, size_t size, int expect)
 }
 
 
-void *vec_alloc(struct vec *v, int n)
+void *cheritree_vec_alloc(struct vec *v, int n)
 {
     char *addr;
 
@@ -131,13 +131,13 @@ void *vec_alloc(struct vec *v, int n)
 }
 
 
-void *vec_get(const struct vec *v, int index)
+void *cheritree_vec_get(const struct vec *v, int index)
 {
     return (v->addr) ? v->addr + (index * v->size) : NULL;
 }
 
 
-void vec_trim(struct vec *v)
+void cheritree_vec_trim(struct vec *v)
 {
     if (v->addr && v->count < v->maxcount) {
         char *ap = realloc(v->addr, v->count * v->size);
@@ -150,7 +150,7 @@ void vec_trim(struct vec *v)
 }
 
 
-void vec_delete(struct vec *v)
+void cheritree_vec_delete(struct vec *v)
 {
     free(v->addr);
     v->addr = NULL;

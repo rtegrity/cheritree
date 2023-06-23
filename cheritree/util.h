@@ -11,22 +11,6 @@
 
 
 /*
- *  Namespace definitions
- */
-#define vec_init        cheritree_vec_init
-#define vec_alloc       cheritree_vec_alloc
-#define vec_get         cheritree_vec_get
-#define vec_trim        cheritree_vec_trim
-#define vec_delete      cheritree_vec_delete
-
-#define string_get      cheritree_string_get
-#define string_alloc    cheritree_string_alloc
-
-#define load_array_from_cmd     cheritree_load_array_from_cmd
-#define load_array_from_path    cheritree_load_array_from_path
-
-
-/*
  *  Linear vector, grown on demand.
  */
 struct vec {
@@ -37,11 +21,11 @@ struct vec {
     int expect;         // Allocation count
 };
 
-void vec_init(struct vec *v, size_t size, int expect);
-void *vec_alloc(struct vec *v, int n);
-void *vec_get(const struct vec *v, int index);
-void vec_trim(struct vec *v);
-void vec_delete(struct vec *v);
+void cheritree_vec_init(struct vec *v, size_t size, int expect);
+void *cheritree_vec_alloc(struct vec *v, int n);
+void *cheritree_vec_get(const struct vec *v, int index);
+void cheritree_vec_trim(struct vec *v);
+void cheritree_vec_delete(struct vec *v);
 
 
 /*
@@ -49,27 +33,27 @@ void vec_delete(struct vec *v);
  */
 typedef int string_t;
 
-string_t string_alloc(const char *s);
-const char *string_get(string_t s);
+string_t cheritree_string_alloc(const char *s);
+const char *cheritree_string_get(string_t s);
 
 
 /*
  *  Access functions.
  */
 #define getcount(v)     (v)->count
-#define getpath(x)      ((x) ? string_get((x)->pathstr) : "")
-#define getname(x)      ((x) ? string_get((x)->namestr) : "")
-#define setname(x,s)    (x)->namestr = string_alloc((s))
-#define setpath(x,s)    (x)->pathstr = string_alloc((s))
+#define getpath(x)      ((x) ? cheritree_string_get((x)->pathstr) : "")
+#define getname(x)      ((x) ? cheritree_string_get((x)->namestr) : "")
+#define setname(x,s)    (x)->namestr = cheritree_string_alloc((s))
+#define setpath(x,s)    (x)->pathstr = cheritree_string_alloc((s))
 
 
 /*
  *  Load array from command or path.
  */
-int load_array_from_cmd(const char *cmd,
+int cheritree_load_from_cmd(const char *cmd,
     int (loadelement)(char *line, struct vec *v), struct vec *v);
 
-int load_array_from_path(const char *path,
+int cheritree_load_from_path(const char *path,
     int (loadelement)(char *line, struct vec *v), struct vec *v);
 
 #endif /* _CHERITREE_UTIL_H_ */

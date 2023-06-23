@@ -17,11 +17,12 @@
 
 static struct vec mappings;
 
+static void load_mappings();
 static void flags_to_str(int flags, char *s, size_t len);
 static int str_to_flags(char *s, size_t len);
 
 
-struct mapping *find_mapping(uintptr_t addr)
+static struct mapping *find_mapping(uintptr_t addr)
 {
     int i;
 
@@ -38,7 +39,7 @@ struct mapping *find_mapping(uintptr_t addr)
 }
 
 
-void set_mapping_name(struct mapping *mapping,
+void cheritree_set_mapping_name(struct mapping *mapping,
     struct mapping *owner, const char *name)
 {
     char buf[2048];
@@ -74,21 +75,21 @@ static void add_mapping_name(struct mapping *mapping)
     // Check for current stack mapping
 
     if (start <= (uintptr_t)&mapping && (uintptr_t)&mapping < end) {
-        set_mapping_name(mapping, NULL, "stack");
+        cheritree_set_mapping_name(mapping, NULL, "stack");
         return;
     }
 
     // Check for current heap mapping
 
     if (start <= (uintptr_t)mapping && (uintptr_t)mapping < end)
-        set_mapping_name(mapping, NULL, "heap");
+        cheritree_set_mapping_name(mapping, NULL, "heap");
 }
 
 
 static int add_mapping(struct vec *v, uintptr_t start,
     uintptr_t end, int flags, char *path)
 {
-    struct mapping *mapping = (struct mapping *)vec_alloc(v, 1);
+    struct mapping *mapping = (struct mapping *)cheritree_vec_alloc(v, 1);
     struct mapping *base = NULL;
     char *cp;
     int i;
@@ -113,7 +114,7 @@ static int add_mapping(struct vec *v, uintptr_t start,
     // Mappings included in base symbols
 
     if (!*path && getprot(mapping) != CT_PROT_NONE) {
-        if (base && find_type(getpath(base),
+        if (base && cheritree_find_type(getpath(base),
                 getbase(base), start, end) != NULL) {
             mapping->base = base - mapping;
             mapping->namestr = base->namestr;
@@ -135,7 +136,7 @@ static int add_mapping(struct vec *v, uintptr_t start,
     setpath(mapping, path);
     setname(mapping, cp ? cp+1 : path);
 
-    load_symbols(path);
+    cheritree_load_symbols(path);
     return 1;
 }
 
@@ -192,20 +193,20 @@ static int load_mapping(char *buffer, struct vec *v)
 }
 
 
-void load_mappings()
+static void load_mappings()
 {
     char cmd[2048];
     struct vec v;
 
     sprintf(cmd, "procstat -v %d", getpid());
-    vec_init(&v, sizeof(struct mapping), 1024);
+    cheritree_vec_init(&v, sizeof(struct mapping), 1024);
 
-    if (!load_array_from_cmd(cmd, load_mapping, &v)) {
+    if (!cheritree_load_from_cmd(cmd, load_mapping, &v)) {
         fprintf(stderr, "Unable to load mappings");
         exit(1);        
     }
 
-    vec_delete(&mappings);
+    cheritree_vec_delete(&mappings);
     mappings = v;
 }
 #endif /* __FreeBSD__ */
@@ -249,26 +250,26 @@ static int load_mapping(char *buffer, struct vec *v)
 }
 
 
-void load_mappings()
+static void load_mappings()
 {
     char path[2048];
     struct vec v;
 
     sprintf(path, "/proc/%d/maps", getpid());
-    vec_init(&v, sizeof(struct mapping), 1024);
+    cheritree_vec_init(&v, sizeof(struct mapping), 1024);
 
-    if (!load_array_from_path(path, load_mapping, &v)) {
+    if (!cheritree_load_from_path(path, load_mapping, &v)) {
         fprintf(stderr, "Unable to load mappings");
         exit(1);        
     }
 
-    vec_delete(&mappings);
+    cheritree_vec_delete(&mappings);
     mappings = v;
 }
 #endif /* __linux__ */
 
 
-struct mapping *resolve_mapping(uintptr_t addr)
+struct mapping *cheritree_resolve_mapping(uintptr_t addr)
 {
     struct mapping *mapping = find_mapping(addr);
 
@@ -281,7 +282,7 @@ struct mapping *resolve_mapping(uintptr_t addr)
 }
 
 
-void print_mappings()
+void cheritree_print_mappings()
 {
     int i;
 
@@ -296,10 +297,10 @@ void print_mappings()
 }
 
 
-int check_address_valid(void ***pptr, void **paddr)
+int cheritree_check_address_valid(void ***pptr, void **paddr)
 {
     uintptr_t addr = (uintptr_t)*pptr;
-    struct mapping *mapping = resolve_mapping(addr);
+    struct mapping *mapping = cheritree_resolve_mapping(addr);
 
     if (!mapping) return 0;
 

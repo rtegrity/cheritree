@@ -28,21 +28,21 @@ static int nprinted;
 
 void _cheritree_init(void *function, void *stack)
 {
-    struct mapping *functionmap = resolve_mapping((uintptr_t)function);
-    struct mapping *stackmap = resolve_mapping((uintptr_t)stack);
-    set_mapping_name(stackmap, functionmap, "stack");
+    struct mapping *functionmap = cheritree_resolve_mapping((uintptr_t)function);
+    struct mapping *stackmap = cheritree_resolve_mapping((uintptr_t)stack);
+    cheritree_set_mapping_name(stackmap, functionmap, "stack");
 }
 
 
 static void print_address(uintptr_t addr)
 {
-    struct mapping *mapping = resolve_mapping(addr);
+    struct mapping *mapping = cheritree_resolve_mapping(addr);
     struct symbol *symbol;
     size_t offset;
 
     if (!mapping || !*getname(mapping)) return;
 
-    symbol = find_symbol(getpath(mapping), getbase(mapping), addr);
+    symbol = cheritree_find_symbol(getpath(mapping), getbase(mapping), addr);
     offset = addr - (size_t)getbase(mapping);
 
     if (!*getpath(mapping) || !symbol || !*getname(symbol)) {
@@ -98,7 +98,7 @@ static void print_capability_tree(void *vaddr, char *prefix)
         for (; (uintptr_t)ptr < end; ptr++) {
             void *p;
 
-            if (!check_address_valid(&ptr, &p)) continue;
+            if (!cheritree_check_address_valid(&ptr, &p)) continue;
 
             if (cheri_is_valid(p) && cheri_base_get(p) <= cheri_address_get(p)
                     && cheri_address_get(p) < cheri_base_get(p) + cheri_length_get(p)) {

@@ -40,7 +40,7 @@ static void print_symbol(const struct symbol *symbol)
 }
 
 
-void print_symbols(const char *path)
+void cheritree_print_symbols(const char *path)
 {
     const struct image *image = find_image(path);
     int i;
@@ -60,7 +60,7 @@ static int load_symbol(char *buffer, struct vec *v)
     if (sscanf(buffer, "%" PRIxPTR " %1s %1023s", &value, type, name) != 3)
         return 1;
 
-    struct symbol *symbol = (struct symbol *)vec_alloc(v, 1);
+    struct symbol *symbol = (struct symbol *)cheritree_vec_alloc(v, 1);
     setname(symbol, name);
     symbol->value = value;
     symbol->type = type[0];
@@ -68,34 +68,34 @@ static int load_symbol(char *buffer, struct vec *v)
 }
 
 
-void load_symbols(const char *path)
+void cheritree_load_symbols(const char *path)
 {
     char cmd[2048];
  
     if (images.addr == 0)
-        vec_init(&images, sizeof(struct image), 1024);
+        cheritree_vec_init(&images, sizeof(struct image), 1024);
 
     if (!path || !*path) return;
     if (find_image(path)) return;
 
-    struct image *image = (struct image *)vec_alloc(&images, 1);
+    struct image *image = (struct image *)cheritree_vec_alloc(&images, 1);
 
-    vec_init(&image->symbols, sizeof(struct symbol), 1024);
+    cheritree_vec_init(&image->symbols, sizeof(struct symbol), 1024);
     setpath(image, path);
 
     sprintf(cmd, "nm -ne %s 2>/dev/null", path);
-    if (load_array_from_cmd(cmd, load_symbol, &image->symbols)) return;
+    if (cheritree_load_from_cmd(cmd, load_symbol, &image->symbols)) return;
 
     // Retry with dynamic symbols
     sprintf(cmd, "nm -Dne %s", path);
-    if (load_array_from_cmd(cmd, load_symbol, &image->symbols)) return;
+    if (cheritree_load_from_cmd(cmd, load_symbol, &image->symbols)) return;
 
     fprintf(stderr, "Unable to load symbols");
     exit(1);
 }
 
 
-const char *find_type(const char *path,
+const char *cheritree_find_type(const char *path,
     uintptr_t base, uintptr_t start, uintptr_t end)
 {
     const struct image *image = find_image(path);
@@ -120,7 +120,8 @@ const char *find_type(const char *path,
 }
 
 
-struct symbol *find_symbol(const char *path, uintptr_t base, uintptr_t addr)
+struct symbol *cheritree_find_symbol(const char *path,
+    uintptr_t base, uintptr_t addr)
 {
     const struct image *image = find_image(path);
     int i;

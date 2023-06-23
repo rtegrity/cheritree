@@ -12,15 +12,6 @@
 
 
 /*
- *  Namespace definitions
- */
-#define load_symbols        cheritree_load_symbols
-#define print_symbols       cheritree_print_symbols
-#define find_symbol         cheritree_find_symbol
-#define find_type           cheritree_find_type
-
-
-/*
  *  Symbol store.
  */
 struct image {
@@ -34,16 +25,16 @@ struct symbol {
     char type;              // Type
 };
 
-void load_symbols(const char *path);
-void print_symbols(const char *path);
-struct symbol *find_symbol(const char *path, uintptr_t base, uintptr_t addr);
-const char *find_type(const char *path, uintptr_t base, uintptr_t start, uintptr_t end);
+void cheritree_load_symbols(const char *path);
+void cheritree_print_symbols(const char *path);
+struct symbol *cheritree_find_symbol(const char *path, uintptr_t base, uintptr_t addr);
+const char *cheritree_find_type(const char *path, uintptr_t base, uintptr_t start, uintptr_t end);
 
 
 /*
  *  Access functions.
  */
-#define getsymbol(v,i)      (struct symbol *)vec_get((v),(i))
-#define getimage(v,i)       (struct image *)vec_get((v),(i))
+#define getsymbol(v,i)      (struct symbol *)cheritree_vec_get((v),(i))
+#define getimage(v,i)       (struct image *)cheritree_vec_get((v),(i))
 
 #endif /* _CHERITREE_SYMBOL_H_ */
