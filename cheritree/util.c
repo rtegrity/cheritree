@@ -76,7 +76,7 @@ string_t string_alloc(const char *s)
     if (!s || !*s) return 0;
 
     if (!strings.addr)
-        vec_init(&strings, sizeof(char), 4096);
+        vec_init(&strings, sizeof(char), 64 * 1024);
  
     addr = vec_alloc(&strings, strlen(s) + 1);
 

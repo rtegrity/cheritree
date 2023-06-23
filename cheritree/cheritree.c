@@ -92,16 +92,16 @@ static void print_capability_tree(void *vaddr, char *prefix)
         void **ptr = (void **)((char *)vaddr - ((size_t)vaddr - cheri_align_up(cheri_base_get(vaddr), sizeof(void *))));
         uintptr_t end = cheri_align_down(cheri_base_get(ptr) + cheri_length_get(ptr), sizeof(void *));
 
-        if (!cheri_is_valid(ptr) /* || !(cheri_base_get(ptr) <= cheri_address_get(ptr)
-            && cheri_address_get(ptr) < cheri_base_get(ptr) + cheri_length_get(ptr))*/) return;
+        if (!cheri_is_valid(ptr) || !(cheri_base_get(ptr) <= cheri_address_get(ptr)
+            && cheri_address_get(ptr) < cheri_base_get(ptr) + cheri_length_get(ptr))) return;
 
         for (; (uintptr_t)ptr < end; ptr++) {
             void *p;
 
             if (!check_address_valid(&ptr, &p)) continue;
 
-            if (cheri_is_valid(p)/* && cheri_base_get(p) <= cheri_address_get(p)
-                    && cheri_address_get(p) < cheri_base_get(p) + cheri_length_get(p)*/) {
+            if (cheri_is_valid(p) && cheri_base_get(p) <= cheri_address_get(p)
+                    && cheri_address_get(p) < cheri_base_get(p) + cheri_length_get(p)) {
                 char pfx[200];
                 sprintf(pfx, "  %s", prefix);
                 print_capability_tree(p, pfx);
@@ -139,4 +139,7 @@ void cheritree_find_capabilities()
 
     if (cheri_is_valid(ptr))
         print_capability_tree(ptr, "ddc");
+
+    if (cheri_is_valid(&regs))
+        print_capability_tree(ptr, "stack");
 }
