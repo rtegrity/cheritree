@@ -42,7 +42,7 @@ static void print_address(uintptr_t addr)
 
     if (!mapping || !*getname(mapping)) return;
 
-    symbol = find_symbol(mapping, addr);
+    symbol = find_symbol(getpath(mapping), getbase(mapping), addr);
     offset = addr - (size_t)getbase(mapping);
 
     if (!*getpath(mapping) || !symbol || !*getname(symbol)) {

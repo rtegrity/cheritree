@@ -95,11 +95,10 @@ void load_symbols(const char *path)
 }
 
 
-const char *find_type(const struct mapping *mapping,
-    uintptr_t start, uintptr_t end)
+const char *find_type(const char *path,
+    uintptr_t base, uintptr_t start, uintptr_t end)
 {
-    const struct image *image = find_image(getpath(mapping));
-    uintptr_t base = getbase(mapping);
+    const struct image *image = find_image(path);
     int i;
 
     if (!image) return NULL;
@@ -121,10 +120,9 @@ const char *find_type(const struct mapping *mapping,
 }
 
 
-struct symbol *find_symbol(const struct mapping *mapping, uintptr_t addr)
+struct symbol *find_symbol(const char *path, uintptr_t base, uintptr_t addr)
 {
-    const struct image *image = find_image(getpath(mapping));
-    uintptr_t base = getbase(mapping);
+    const struct image *image = find_image(path);
     int i;
 
     if (!image) return NULL;

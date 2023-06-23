@@ -113,7 +113,8 @@ static int add_mapping(struct vec *v, uintptr_t start,
     // Mappings included in base symbols
 
     if (!*path && getprot(mapping) != CT_PROT_NONE) {
-        if (base && find_type(base, start, end) != NULL) {
+        if (base && find_type(getpath(base),
+                getbase(base), start, end) != NULL) {
             mapping->base = base - mapping;
             mapping->namestr = base->namestr;
             return 1;

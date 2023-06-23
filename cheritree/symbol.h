@@ -8,7 +8,6 @@
 #define _CHERITREE_SYMBOL_H_
 
 #include <stdint.h>
-#include "mapping.h"
 #include "util.h"
 
 
@@ -37,8 +36,8 @@ struct symbol {
 
 void load_symbols(const char *path);
 void print_symbols(const char *path);
-struct symbol *find_symbol(const struct mapping *mapping, uintptr_t addr);
-const char *find_type(const struct mapping *mapping, uintptr_t start, uintptr_t end);
+struct symbol *find_symbol(const char *path, uintptr_t base, uintptr_t addr);
+const char *find_type(const char *path, uintptr_t base, uintptr_t start, uintptr_t end);
 
 
 /*
