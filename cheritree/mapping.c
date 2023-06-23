@@ -17,24 +17,8 @@
 
 static struct vec mappings;
 
-static int str_to_prot(const char *str);
-static char *prot_to_str(char *str, int prot);
-static int str_to_flags(const char *str);
-static char *flags_to_str(char *str, int type);
-static int str_to_type(const char *str);
-static char *type_to_str(char *str, int type);
-
-
-static void print_mapping(struct mapping *mapping)
-{
-    char prot[CT_PROT_MAXLEN], flags[CT_FLAGS_MAXLEN], type[CT_TYPE_MAXLEN];
-
-    printf("%#" PRIxPTR "-%#" PRIxPTR " %s %s %s %s [base %#" PRIxPTR "]\n",
-        mapping->start, mapping->end, prot_to_str(prot, mapping->prot),
-        flags_to_str(flags, mapping->flags), type_to_str(type, mapping->type),
-        (*getpath(mapping) ? getpath(mapping) : getname(mapping)),
-        mapping[mapping->base].start);
-}
+static void flags_to_str(int flags, char *s, size_t len);
+static int str_to_flags(char *s, size_t len);
 
 
 struct mapping *find_mapping(uintptr_t addr)
@@ -69,8 +53,8 @@ static string_t find_name(uintptr_t start, uintptr_t end)
 }
 
 
-static int add_mapping(struct vec *v, uintptr_t start, uintptr_t end,
-    int prot, int flags, int type, char *path)
+static int add_mapping(struct vec *v, uintptr_t start,
+    uintptr_t end, int flags, char *path)
 {
     struct mapping *mapping = (struct mapping *)vec_alloc(v, 1);
     struct mapping *base = NULL;
@@ -79,9 +63,7 @@ static int add_mapping(struct vec *v, uintptr_t start, uintptr_t end,
 
     mapping->start = start;
     mapping->end = end;
-    mapping->prot = prot;
     mapping->flags = flags;
-    mapping->type = type;
 
     // Identify base mapping
     for (i = 0; i < getcount(v); i++) {
@@ -95,7 +77,7 @@ static int add_mapping(struct vec *v, uintptr_t start, uintptr_t end,
         }
     }
 
-    if (!*path && mapping->prot != CT_PROT_NONE) {
+    if (!*path && getprot(mapping) != CT_PROT_NONE) {
         if (base && find_type(base, start, end) != NULL) {
             mapping->base = base - mapping;
             mapping->namestr = base->namestr;
@@ -108,7 +90,13 @@ static int add_mapping(struct vec *v, uintptr_t start, uintptr_t end,
         return 1;
     }
 
+    if (*path == '[') {
+        setname(mapping, path);
+        return 1;
+    }
+
     cp = strrchr(path, '/');
+
     setpath(mapping, path);
     setname(mapping, cp ? cp+1 : path);
 
@@ -117,20 +105,55 @@ static int add_mapping(struct vec *v, uintptr_t start, uintptr_t end,
 }
 
 
+#ifdef __FreeBSD__
+static struct flagmap { int i; char s[6]; int f; } flagmap[] = {
+    { 0, "-----", 0 }, { 0, "r", CT_PROT_READ },
+    { 1, "w", CT_PROT_WRITE }, { 2, "x", CT_PROT_EXEC },
+    { 3, "R", CT_PROT_READ_CAP }, { 4, "W", CT_PROT_WRITE_CAP },
+
+    { 6, "-----", 0 }, { 6, "U", CT_FLAG_UNMAPPED },
+    { 6, "G", CT_FLAG_GUARD }, { 6, "C", CT_FLAG_COW },
+    { 7, "N", CT_FLAG_NEEDS_COPY }, { 8, "S", CT_FLAG_SUPER },
+    { 9, "D", CT_FLAG_GROWS_DOWN }, { 9, "U", CT_FLAG_GROWS_UP },
+    { 10, "W", CT_FLAG_USER_WIRED },
+
+    { 12, "--", 0 }, { 12, "df", CT_TYPE_DEFAULT },
+    { 12, "vn", CT_TYPE_VNODE }, { 12, "sw", CT_TYPE_SWAP },
+    { 12, "dv", CT_TYPE_DEVICE }, { 12, "ph", CT_TYPE_PHYS },
+    { 12, "dd", CT_TYPE_DEAD }, { 12, "sg", CT_TYPE_SG },
+    { 12, "md", CT_TYPE_MGTDEVICE }, { 12, "gd", CT_TYPE_GUARD },
+    { 12, "??", CT_TYPE_UNKNOWN },
+    { 0 }
+};
+
+
+static void print_mapping(struct mapping *mapping)
+{
+    char s[15];
+
+    flags_to_str(getflags(mapping), s, strlen(s));
+
+    printf("%#" PRIxPTR "-%#" PRIxPTR " %s %s %s %s [base %#" PRIxPTR "]\n",
+        mapping->start, mapping->end, &s[0], &s[6], &s[12],
+        (*getpath(mapping) ? getpath(mapping) : getname(mapping)),
+        mapping[mapping->base].start);
+}
+
+
 static int load_mapping(char *buffer, struct vec *v)
 {
-    char prot[6], flags[6], type[3], path[PATH_MAX];
+    char s[15], path[PATH_MAX];
     uintptr_t start, end;
-    char *cp;
 
     strcpy(path, "");
+    memset(s, 0, sizeof(s));
+
     if (sscanf(buffer, "%*d %" PRIxPTR " %" PRIxPTR
-            " %5s %*d %*d %*d %*d %5s %2s %s", &start, &end, prot, flags,
-            type, path) < 5)
+            " %5s %*d %*d %*d %*d %5s %2s %s", &start, &end,
+            &s[0], &s[6], &s[12], path) < 5)
         return 1;
 
-    return add_mapping(v, start, end, str_to_prot(prot),
-        str_to_flags(flags), str_to_type(type), path);
+    return add_mapping(v, start, end, str_to_flags(s, sizeof(s)), path);
 }
 
 
@@ -150,6 +173,64 @@ void load_mappings()
     vec_delete(&mappings);
     mappings = v;
 }
+#endif /* __FreeBSD__ */
+
+
+#ifdef __linux__
+static struct flagmap { int i; char s[5]; int f; } flagmap[] = {
+    { 0, "----", 0 }, { 0, "r", CT_PROT_READ },
+    { 1, "w", CT_PROT_WRITE }, { 2, "x", CT_PROT_EXEC },
+    { 3, "p", CT_FLAG_SHARED }, { 3, "p", CT_FLAG_PRIVATE },
+    { 0 }
+};
+
+
+static void print_mapping(struct mapping *mapping)
+{
+    char s[5];
+
+    flags_to_str(getflags(mapping), s, sizeof(s));
+
+    printf("%#" PRIxPTR "-%#" PRIxPTR " %s %s [base %#" PRIxPTR "]\n",
+        mapping->start, mapping->end, s,
+        (*getpath(mapping) ? getpath(mapping) : getname(mapping)),
+        mapping[mapping->base].start);
+}
+
+
+static int load_mapping(char *buffer, struct vec *v)
+{
+    char s[5], path[PATH_MAX];
+    uintptr_t start, end;
+
+    strcpy(path, "");
+    memset(s, 0, sizeof(s));
+
+    if (sscanf(buffer, "%" PRIxPTR "-%" PRIxPTR
+            " %4s %*x %*d:%*d %*d %s", &start, &end, s, path) < 4)
+        return 1;
+
+    return add_mapping(v, start, end, str_to_flags(s, sizeof(s)), path);
+}
+
+
+void load_mappings()
+{
+    char path[2048];
+    struct vec v;
+
+    sprintf(path, "/proc/%d/maps", getpid());
+    vec_init(&v, sizeof(struct mapping), 1024);
+
+    if (!load_array_from_path(path, load_mapping, &v)) {
+        fprintf(stderr, "Unable to load mappings");
+        exit(1);        
+    }
+
+    vec_delete(&mappings);
+    mappings = v;
+}
+#endif /* __linux__ */
 
 
 struct mapping *resolve_mapping(uintptr_t addr)
@@ -174,7 +255,7 @@ void print_mappings()
     for (i = 0; i < getcount(&mappings); i++) {
         struct mapping *mp = getmapping(&mappings, i);
 
-        if (mp->prot != CT_PROT_NONE)
+        if (getprot(mp) != CT_PROT_NONE)
             print_mapping(mp);
     }
 }
@@ -187,7 +268,7 @@ int check_address_valid(void ***pptr)
 
     if (!mapping) return 0;
 
-    if (mapping->prot == CT_PROT_NONE) {
+    if (getprot(mapping) == CT_PROT_NONE) {
         *(char **)pptr += (mapping->end - sizeof(void *)) - (size_t)*pptr;
         return 0;
     }
@@ -196,92 +277,29 @@ int check_address_valid(void ***pptr)
 }
 
 
-/*
- *  Convert access protection.
- */
-
-static int str_to_prot(const char *s)
+static void flags_to_str(int flags, char *s, size_t len)
 {
-    return (s[0] == 'r' ? CT_PROT_READ : 0)
-         | (s[1] == 'w' ? CT_PROT_WRITE : 0)
-         | (s[2] == 'x' ? CT_PROT_EXEC : 0)
-         | (s[3] == 'R' ? CT_PROT_READ_CAP : 0)
-         | (s[4] == 'W' ? CT_PROT_WRITE_CAP : 0);
+    int type = (flags & CT_TYPE_MASK);
+    struct flagmap *fp;
+
+    memset(s, 0, len);
+
+    for (fp = flagmap; *fp->s; fp++)
+        if ((fp->f & CT_TYPE_MASK) ? (type == fp->f) : (flags & fp->f) == fp->f)
+            if (fp->i + strlen(fp->s) < len)
+                strncpy(&s[fp->i], fp->s, strlen(fp->s));
 }
 
 
-static char *prot_to_str(char *s, int prot)
+static int str_to_flags(char *s, size_t len)
 {
-    s[0] = (prot & CT_PROT_READ) ? 'r' : '-';
-    s[1] = (prot & CT_PROT_WRITE) ? 'w' : '-';
-    s[2] = (prot & CT_PROT_EXEC) ? 'x' : '-';
-    s[3] = (prot & CT_PROT_READ_CAP) ? 'R' : '-';
-    s[4] = (prot & CT_PROT_WRITE_CAP) ? 'W' : '-';
-    s[5] = 0;
-    return s;
-}
+    struct flagmap *fp;
+    int flags = 0;
 
-/*
- *  Convert mapping flags.
- */
+    for (fp = flagmap; *fp->s; fp++)
+        if (fp->f && fp->i + strlen(fp->s) < len)
+            if (!strncmp(&s[fp->i], fp->s, strlen(fp->s)))
+                flags |= fp->f;
 
-static int str_to_flags(const char *s)
-{
-    return (s[0] == 'C' ? CT_FLAG_COW : 0)
-         | (s[0] == 'G' ? CT_FLAG_GUARD : 0)
-         | (s[0] == 'U' ? CT_FLAG_UNMAPPED : 0)
-         | (s[1] == 'N' ? CT_FLAG_NEEDS_COPY : 0)
-         | (s[2] == 'S' ? CT_FLAG_SUPER : 0)
-         | (s[3] == 'U' ? CT_FLAG_GROWS_UP : 0)
-         | (s[3] == 'D' ? CT_FLAG_GROWS_DOWN : 0)
-         | (s[4] == 'W' ? CT_FLAG_USER_WIRED : 0);
-}
-
-
-static char *flags_to_str(char *s, int flags)
-{
-    s[0] = (flags & CT_FLAG_COW) ? 'C' :
-           (flags & CT_FLAG_GUARD) ? 'G' :
-           (flags & CT_FLAG_UNMAPPED) ? 'U' : '-';
-    s[1] = (flags & CT_FLAG_NEEDS_COPY) ? 'N' : '-';
-    s[2] = (flags & CT_FLAG_SUPER) ? 'S' : '-';
-    s[3] = (flags & CT_FLAG_GROWS_UP) ? 'U' :
-           (flags & CT_FLAG_GROWS_DOWN) ? 'D' : '-';
-    s[4] = (flags & CT_FLAG_USER_WIRED) ? 'W' : '-';
-    s[5] = 0;
-    return s;
-}
-
-
-/*
- *  Convert mapping type.
- */
-
-static int str_to_type(const char *s)
-{
-    return !strcmp(s, "--") ? CT_TYPE_NONE :
-           !strcmp(s, "df") ? CT_TYPE_DEFAULT :
-           !strcmp(s, "vn") ? CT_TYPE_VNODE :
-           !strcmp(s, "sw") ? CT_TYPE_SWAP :
-           !strcmp(s, "dv") ? CT_TYPE_DEVICE :
-           !strcmp(s, "ph") ? CT_TYPE_PHYS :
-           !strcmp(s, "dd") ? CT_TYPE_DEAD :
-           !strcmp(s, "sg") ? CT_TYPE_SG :
-           !strcmp(s, "md") ? CT_TYPE_MGTDEVICE :
-           !strcmp(s, "gd") ? CT_TYPE_GUARD : CT_TYPE_UNKNOWN;
-}
-
-
-static char *type_to_str(char *s, int type)
-{
-    return strcpy(s, (type == CT_TYPE_NONE) ? "--" :
-        (type == CT_TYPE_DEFAULT) ? "df" :
-        (type == CT_TYPE_VNODE) ? "vn" :
-        (type == CT_TYPE_SWAP) ? "sw" :
-        (type == CT_TYPE_DEVICE) ? "dv" :
-        (type == CT_TYPE_PHYS) ? "ph" :
-        (type == CT_TYPE_DEAD) ? "dd" :
-        (type == CT_TYPE_SG) ? "sg" :
-        (type == CT_TYPE_MGTDEVICE) ? "md" :
-        (type == CT_TYPE_GUARD) ? "gd" : "??");
+    return flags;
 }
