@@ -11,15 +11,17 @@
 
 
 extern void cheritree_saveregs(void **);
-extern void _cheritree_find_capabilities(void **regs, int nregs, void *ddc, void *pcc);
+extern void _cheritree_find_capabilities(void **regs, int nregs);
 
 
 void cheritree_find_capabilities()
 {
-    void *regs[32];
+    void *regs[34];
 
     cheritree_saveregs(regs);
+    regs[32] = cheri_ddc_get();
+    regs[33] = cheri_pcc_get();
     
     cheritree_init();
-    _cheritree_find_capabilities(regs, 32, cheri_ddc_get(), cheri_pcc_get());
+    _cheritree_find_capabilities(regs, 34);
 }
