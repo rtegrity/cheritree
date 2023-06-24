@@ -39,7 +39,7 @@ static void print_address(void *vaddr, char *name, int depth)
     addr_t addr = (addr_t)cheri_address_get(vaddr);
     mapping_t *mapping = cheritree_resolve_mapping(addr);
     symbol_t *symbol;
-    size_t offset;
+    addr_t offset;
     int i;
 
     for (i = 0; i < depth; i++) putc(' ', stdout);
@@ -50,19 +50,19 @@ static void print_address(void *vaddr, char *name, int depth)
     }
 
     symbol = cheritree_find_symbol(getpath(mapping), getbase(mapping), addr);
-    offset = addr - (size_t)getbase(mapping);
+    offset = addr - (addr_t)getbase(mapping);
 
     printf("%s %#p    ", name, vaddr);
 
     if (!*getpath(mapping) || !symbol || !*getname(symbol)) {
-        printf("%s+%#zx\n", getname(mapping), offset);
+        printf("%s+%" PRIxADDR "\n", getname(mapping), offset);
         return;
     }
 
-    offset -= (size_t)symbol->value;
+    offset -= symbol->value;
 
     if (offset)
-        printf("%s!%s+%#zx\n", getname(mapping), getname(symbol), offset);
+        printf("%s!%s+%" PRIxADDR "\n", getname(mapping), getname(symbol), offset);
 
     else printf("%s!%s\n", getname(mapping), getname(symbol));
 }
@@ -75,7 +75,7 @@ static int get_pointer_range(void *vaddr, void ***pstart, uintptr_t *pend)
 
     if (cheri_is_sentry(vaddr)) return 0;
 
-    ptr = (void **)((char *)vaddr - ((size_t)vaddr -
+    ptr = (void **)((char *)vaddr - ((addr_t)vaddr -
         cheri_align_up(cheri_base_get(vaddr), sizeof(void *))));
 
     end = cheri_align_down(cheri_base_get(ptr) +

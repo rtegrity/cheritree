@@ -14,10 +14,6 @@ As documented, there's currently no protection against vulnerabilities from modi
 nm --print-size --extern-only lib1.so
 ~~~
 
-## Capability Tree
-
-Use ptraddr_t instead of size_t ??
-
 ## CheriTree
 
 Unit test code

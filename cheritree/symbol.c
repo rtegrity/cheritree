@@ -105,7 +105,7 @@ const char *cheritree_find_type(const char *path,
 
     for (i = 0; i < getcount(&image->symbols); i++) {
         const symbol_t *sym = getsymbol(&image->symbols, i);
-        size_t addr = base + (size_t)sym->value;
+        addr_t addr = base + sym->value;
 
         if (addr > end) break;
 
@@ -130,7 +130,7 @@ symbol_t *cheritree_find_symbol(const char *path,
 
     for (i = 0; i < getcount(&image->symbols); i++) {
         const symbol_t *sym = getsymbol(&image->symbols, i);
-        if (base + (size_t)sym->value > addr) break;
+        if (base + sym->value > addr) break;
     }
 
     return (i) ? getsymbol(&image->symbols, i-1) : NULL;

@@ -305,7 +305,7 @@ int cheritree_dereference_address(void ***pptr, void **paddr)
     if (!mapping) return 0;
 
     if (getprot(mapping) == CT_PROT_NONE) {
-        *(char **)pptr += (mapping->end - sizeof(void *)) - (size_t)*pptr;
+        *(char **)pptr += (mapping->end - sizeof(void *)) - (addr_t)*pptr;
          return 0;
     }
 
