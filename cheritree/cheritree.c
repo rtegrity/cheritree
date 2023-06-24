@@ -128,7 +128,7 @@ static void print_capability_tree(void *vaddr, char *name, int depth)
 }
 
 
-void _cheritree_find_capabilities(void **regs, int nregs)
+void _cheritree_find_capabilities(void **regs, int nregs, void *ddc, void *pcc)
 {
     char reg[20];
     int i;
@@ -141,6 +141,6 @@ void _cheritree_find_capabilities(void **regs, int nregs)
     }
 
     print_capability_tree(regs[0], "c0", 0);
-    print_capability_tree(cheri_ddc_get(), "ddc", 0);
-    print_capability_tree(cheri_pcc_get(), "pcc", 0);
+    print_capability_tree(ddc, "ddc", 0);
+    print_capability_tree(pcc, "pcc", 0);
 }
