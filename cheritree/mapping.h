@@ -15,19 +15,19 @@
 /*
  *  Memory mapping.
  */
-struct mapping {
+typedef struct mapping {
     uintptr_t start;            // Start address
     uintptr_t end;              // End address
     int flags;                  // Mapping flags
     int base;                   // Start of image (offset)
     string_t pathstr;           // Path string
     string_t namestr;           // Name string
-};
+} mapping_t;
 
-struct mapping *cheritree_resolve_mapping(uintptr_t addr);
+mapping_t *cheritree_resolve_mapping(uintptr_t addr);
 void cheritree_print_mappings();
-void cheritree_set_mapping_name(struct mapping *mapping,
-    struct mapping *owner, const char *name);
+void cheritree_set_mapping_name(mapping_t *mapping,
+    mapping_t *owner, const char *name);
 int cheritree_dereference_address(void ***pptr, void **paddr);
 
 
@@ -78,7 +78,7 @@ int cheritree_dereference_address(void ***pptr, void **paddr);
 /*
  *  Access functions.
  */
-#define getmapping(v,i)     (struct mapping *)cheritree_vec_get((v),(i))
+#define getmapping(v,i)     (mapping_t *)cheritree_vec_get((v),(i))
 #define getbase(m)          ((m) ? (m)[(m)->base].start : 0)
 #define gettype(m)          ((m) ? ((m)->flags & CT_TYPE_MASK) : 0)
 #define getprot(m)          ((m) ? ((m)->flags & CT_PROT_MASK) : 0)

@@ -22,14 +22,14 @@ static void flags_to_str(int flags, char *s, size_t len);
 static int str_to_flags(char *s, size_t len);
 
 
-static struct mapping *find_mapping(uintptr_t addr)
+static mapping_t *find_mapping(uintptr_t addr)
 {
     int i;
 
     if (!mappings.addr) load_mappings();
 
     for (i = 0; i < getcount(&mappings); i++) {
-        struct mapping *mp = getmapping(&mappings, i);
+        mapping_t *mp = getmapping(&mappings, i);
         if (addr >= mp->end) continue;
         if (addr < mp->start) break;
         return mp;
@@ -39,8 +39,8 @@ static struct mapping *find_mapping(uintptr_t addr)
 }
 
 
-void cheritree_set_mapping_name(struct mapping *mapping,
-    struct mapping *owner, const char *name)
+void cheritree_set_mapping_name(mapping_t *mapping,
+    mapping_t *owner, const char *name)
 {
     char buf[2048];
 
@@ -57,14 +57,14 @@ void cheritree_set_mapping_name(struct mapping *mapping,
 }
 
 
-static void add_mapping_name(struct mapping *mapping)
+static void add_mapping_name(mapping_t *mapping)
 {
     uintptr_t start = mapping->start, end = mapping->end;
 
     // Copy any previously identified name
 
     if (getcount(&mappings)) {
-        struct mapping *mp = find_mapping(start);
+        mapping_t *mp = find_mapping(start);
 
         if (mp && mp->start == start && mp->end == end && !*getpath(mp)) {
             mapping->namestr = mp->namestr;
@@ -89,8 +89,8 @@ static void add_mapping_name(struct mapping *mapping)
 static int add_mapping(struct vec *v, uintptr_t start,
     uintptr_t end, int flags, char *path)
 {
-    struct mapping *mapping = (struct mapping *)cheritree_vec_alloc(v, 1);
-    struct mapping *base = NULL;
+    mapping_t *mapping = (mapping_t *)cheritree_vec_alloc(v, 1);
+    mapping_t *base = NULL;
     char *cp;
     int i;
 
@@ -101,7 +101,7 @@ static int add_mapping(struct vec *v, uintptr_t start,
     // Identify base mapping
 
     for (i = 0; i < getcount(v); i++) {
-        struct mapping *mp = getmapping(v, i);
+        mapping_t *mp = getmapping(v, i);
 
         if (!mp->base && *getpath(mp)) base = mp;
 
@@ -163,7 +163,7 @@ static struct flagmap { int i; char s[6]; int f; } flagmap[] = {
 };
 
 
-static void print_mapping(struct mapping *mapping)
+static void print_mapping(mapping_t *mapping)
 {
     char s[15];
 
@@ -199,7 +199,7 @@ static void load_mappings()
     struct vec v;
 
     sprintf(cmd, "procstat -v %d", getpid());
-    cheritree_vec_init(&v, sizeof(struct mapping), 1024);
+    cheritree_vec_init(&v, sizeof(mapping_t), 1024);
 
     if (!cheritree_load_from_cmd(cmd, load_mapping, &v)) {
         fprintf(stderr, "Unable to load mappings");
@@ -221,7 +221,7 @@ static struct flagmap { int i; char s[5]; int f; } flagmap[] = {
 };
 
 
-static void print_mapping(struct mapping *mapping)
+static void print_mapping(mapping_t *mapping)
 {
     char s[5];
 
@@ -256,7 +256,7 @@ static void load_mappings()
     struct vec v;
 
     sprintf(path, "/proc/%d/maps", getpid());
-    cheritree_vec_init(&v, sizeof(struct mapping), 1024);
+    cheritree_vec_init(&v, sizeof(mapping_t), 1024);
 
     if (!cheritree_load_from_path(path, load_mapping, &v)) {
         fprintf(stderr, "Unable to load mappings");
@@ -269,9 +269,9 @@ static void load_mappings()
 #endif /* __linux__ */
 
 
-struct mapping *cheritree_resolve_mapping(uintptr_t addr)
+mapping_t *cheritree_resolve_mapping(uintptr_t addr)
 {
-    struct mapping *mapping = find_mapping(addr);
+    mapping_t *mapping = find_mapping(addr);
 
     if (!mapping) {
         load_mappings();
@@ -289,7 +289,7 @@ void cheritree_print_mappings()
     if (!mappings.addr) load_mappings();
 
     for (i = 0; i < getcount(&mappings); i++) {
-        struct mapping *mp = getmapping(&mappings, i);
+        mapping_t *mp = getmapping(&mappings, i);
 
         if (getprot(mp) != CT_PROT_NONE)
             print_mapping(mp);
@@ -300,7 +300,7 @@ void cheritree_print_mappings()
 int cheritree_dereference_address(void ***pptr, void **paddr)
 {
     uintptr_t addr = (uintptr_t)*pptr;
-    struct mapping *mapping = cheritree_resolve_mapping(addr);
+    mapping_t *mapping = cheritree_resolve_mapping(addr);
 
     if (!mapping) return 0;
 

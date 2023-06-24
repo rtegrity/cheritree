@@ -28,8 +28,8 @@ static int nprinted;
 
 void _cheritree_init(void *function, void *stack)
 {
-    struct mapping *functionmap = cheritree_resolve_mapping((uintptr_t)function);
-    struct mapping *stackmap = cheritree_resolve_mapping((uintptr_t)stack);
+    mapping_t *functionmap = cheritree_resolve_mapping((uintptr_t)function);
+    mapping_t *stackmap = cheritree_resolve_mapping((uintptr_t)stack);
     cheritree_set_mapping_name(stackmap, functionmap, "stack");
 }
 
@@ -37,8 +37,8 @@ void _cheritree_init(void *function, void *stack)
 static void print_address(void *vaddr, char *name, int depth)
 {
     uintptr_t addr = cheri_address_get(vaddr);
-    struct mapping *mapping = cheritree_resolve_mapping(addr);
-    struct symbol *symbol;
+    mapping_t *mapping = cheritree_resolve_mapping(addr);
+    symbol_t *symbol;
     size_t offset;
     int i;
 
