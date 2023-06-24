@@ -93,8 +93,9 @@ const char *cheritree_string_get(string_t s)
 /*
  *  Linear vector, grown on demand.
  *
- *  Note: Nemory allocation failures will result in the program
- *  exiting.
+ *  Note: A linear vector is used instead of more flexible
+ *  structures to minimise the number of capabilities introduced.
+ *  Memory allocation failures will result in the program exiting.
  */
 void cheritree_vec_init(struct vec *v, size_t size, int expect)
 {

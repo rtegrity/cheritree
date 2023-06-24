@@ -12,6 +12,10 @@
 
 /*
  *  Linear vector, grown on demand.
+ *
+ *  Note: A linear vector is used instead of more flexible
+ *  structures to minimise the number of capabilities introduced.
+ *  Memory allocation failures will result in the program exiting.
  */
 struct vec {
     char *addr;         // Array of elements
@@ -30,6 +34,10 @@ void cheritree_vec_delete(struct vec *v);
 
 /*
  *  String store, grown on demand.
+ *
+ *  Note: Strings are referenced by offset to minimise the number
+ *  of capabilities introduced. There is no need to support deletion
+ *  since the address space is assumed to be relatively static.
  */
 typedef int string_t;
 
