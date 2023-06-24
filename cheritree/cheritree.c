@@ -19,9 +19,6 @@
 #include "symbol.h"
 
 
-extern int saveregs(void **);
-
-
 static void *printed[8192];
 static int nprinted;
 
@@ -52,7 +49,7 @@ static void print_address(void *vaddr, char *name, int depth)
     symbol = cheritree_find_symbol(getpath(mapping), getbase(mapping), addr);
     offset = addr - (addr_t)getbase(mapping);
 
-    printf("%s %#p    ", name, vaddr);
+    printf("%s %#p  ", name, vaddr);
 
     if (!*getpath(mapping) || !symbol || !*getname(symbol)) {
         printf("%s+%" PRIxADDR "\n", getname(mapping), offset);
@@ -131,16 +128,14 @@ static void print_capability_tree(void *vaddr, char *name, int depth)
 }
 
 
-void cheritree_find_capabilities()
+void _cheritree_find_capabilities(void **regs, int nregs)
 {
-    void *regs[32], *ptr;
     char reg[20];
     int i;
 
-    saveregs(regs);
     nprinted = 0;
 
-    for (i = 1; i < sizeof(regs) / sizeof(regs[0]); i++) {
+    for (i = 1; i < nregs; i++) {
         sprintf(reg, "c%d", i);
         print_capability_tree(regs[i], reg, 0);
     }

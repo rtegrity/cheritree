@@ -6,7 +6,7 @@
 
 #include <machine/asm.h>
 
-ENTRY(saveregs)
+ENTRY(cheritree_saveregs)
 	/* Save the registers */
 	stp	c0, c1, [c0], #(CAP_WIDTH * 2)
 	stp	c2, c3, [c0], #(CAP_WIDTH * 2)
@@ -25,4 +25,4 @@ ENTRY(saveregs)
 	stp	c28, C29, [c0], #(CAP_WIDTH * 2)
 	stp	c30, C31, [c0], #(CAP_WIDTH * 2)
 	ret
-END(saveregs)
+END(cheritree_saveregs)

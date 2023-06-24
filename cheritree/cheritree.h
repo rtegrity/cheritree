@@ -7,11 +7,13 @@
 #ifndef _CHERITREE_H_
 #define _CHERITREE_H_
 
+
 extern int cheritree_print_mappings();
-extern int cheritree_find_capabilities();
-extern void _cheritree_init(void *function, void *stack);
+extern void cheritree_find_capabilities();
+
 
 static void cheritree_init() {
+    extern void _cheritree_init(void *function, void *stack);
     char *cp;
     _cheritree_init(&cheritree_init, &cp);
 }

@@ -9,6 +9,7 @@
 	# public functions
     cheritree_print_mappings;
     cheritree_find_capabilities;
+    _cheritree_find_capabilities;
     _cheritree_init;
 
 	local: *;
