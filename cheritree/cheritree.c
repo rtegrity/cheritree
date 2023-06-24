@@ -34,39 +34,74 @@ void _cheritree_init(void *function, void *stack)
 }
 
 
-static void print_address(uintptr_t addr)
+static void print_address(void *vaddr, char *name, int depth)
 {
+    uintptr_t addr = cheri_address_get(vaddr);
     struct mapping *mapping = cheritree_resolve_mapping(addr);
     struct symbol *symbol;
     size_t offset;
+    int i;
 
-    if (!mapping || !*getname(mapping)) return;
+    for (i = 0; i < depth; i++) putc(' ', stdout);
+
+    if (!mapping || !*getname(mapping)) {
+        printf("%s %#p\n", name, vaddr);
+        return;
+    }
 
     symbol = cheritree_find_symbol(getpath(mapping), getbase(mapping), addr);
     offset = addr - (size_t)getbase(mapping);
 
+    printf("%s %#p    ", name, vaddr);
+
     if (!*getpath(mapping) || !symbol || !*getname(symbol)) {
-        printf("%s+%#zx", getname(mapping), offset);
+        printf("%s+%#zx\n", getname(mapping), offset);
         return;
     }
 
     offset -= (size_t)symbol->value;
 
     if (offset)
-        printf("%s!%s+%#zx", getname(mapping), getname(symbol), offset);
+        printf("%s!%s+%#zx\n", getname(mapping), getname(symbol), offset);
 
-    else printf("%s!%s", getname(mapping), getname(symbol));
+    else printf("%s!%s\n", getname(mapping), getname(symbol));
 }
 
 
-static int check_printed(void *addr)
+static int get_pointer_range(void *vaddr, void ***pstart, uintptr_t *pend)
+{
+    uintptr_t end;
+    void **ptr;
+
+    if (cheri_is_sentry(vaddr)) return 0;
+
+    ptr = (void **)((char *)vaddr - ((size_t)vaddr -
+        cheri_align_up(cheri_base_get(vaddr), sizeof(void *))));
+
+    end = cheri_align_down(cheri_base_get(ptr) +
+         cheri_length_get(ptr), sizeof(void *));
+
+    if (!cheri_is_valid(ptr)) return 0;
+    if (cheri_base_get(ptr) > cheri_address_get(ptr)) return 0;
+
+    if (cheri_address_get(ptr) >= cheri_base_get(ptr) + cheri_length_get(ptr))
+        return 0;
+
+    *pstart = ptr;
+    *pend = end;
+    return 1;
+}
+
+
+static int is_printed(void *addr)
 {
     int i = 0;
 
     for (; i < nprinted; i++)
-        if (printed[i] == addr ||
+        if (printed[i] == addr || 
                 (cheri_base_get(printed[i]) <= cheri_address_get(addr)
-                && cheri_address_get(addr) + sizeof(void *) <= cheri_base_get(printed[i]) + cheri_length_get(printed[i])))
+                && cheri_address_get(addr) + sizeof(void *) <=
+                    cheri_base_get(printed[i]) + cheri_length_get(printed[i])))
             return 1;
 
     if (i >= sizeof(printed) / sizeof(printed[0])) {
@@ -79,67 +114,38 @@ static int check_printed(void *addr)
 }
 
 
-static void print_capability_tree(void *vaddr, char *prefix)
+static void print_capability_tree(void *vaddr, char *name, int depth)
 {
-    if (check_printed(vaddr) || !cheri_is_valid(vaddr)) return;
+    void **ptr, *p;
+    uintptr_t end;
+    
+    if (!cheri_is_valid(vaddr)) return;
 
-    uintptr_t addr = cheri_address_get(vaddr);
-    printf("%s %#p    ", prefix, vaddr);
-    print_address(addr);
-    printf("\n");
+    print_address(vaddr, name, depth);
 
-    if (!cheri_is_sentry(vaddr)) {
-        void **ptr = (void **)((char *)vaddr - ((size_t)vaddr - cheri_align_up(cheri_base_get(vaddr), sizeof(void *))));
-        uintptr_t end = cheri_align_down(cheri_base_get(ptr) + cheri_length_get(ptr), sizeof(void *));
-
-        if (!cheri_is_valid(ptr) || !(cheri_base_get(ptr) <= cheri_address_get(ptr)
-            && cheri_address_get(ptr) < cheri_base_get(ptr) + cheri_length_get(ptr))) return;
-
-        for (; (uintptr_t)ptr < end; ptr++) {
-            void *p;
-
-            if (!cheritree_check_address_valid(&ptr, &p)) continue;
-
-            if (cheri_is_valid(p) && cheri_base_get(p) <= cheri_address_get(p)
-                    && cheri_address_get(p) < cheri_base_get(p) + cheri_length_get(p)) {
-                char pfx[200];
-                sprintf(pfx, "  %s", prefix);
-                print_capability_tree(p, pfx);
-            }
-        }
-    }
+    if (get_pointer_range(vaddr, &ptr, &end))
+        for (; (uintptr_t)ptr < end; ptr++)
+            if (cheritree_dereference_address(&ptr, &p))
+                if (cheri_is_valid(p) && !is_printed(p))
+                    print_capability_tree(p, name, depth+1);
 }
 
 
 void cheritree_find_capabilities()
 {
     void *regs[32], *ptr;
+    char reg[20];
     int i;
 
     saveregs(regs);
-
     nprinted = 0;
 
-    ptr = cheri_pcc_get();
+    for (i = 1; i < sizeof(regs) / sizeof(regs[0]); i++) {
+        sprintf(reg, "c%d", i);
+        print_capability_tree(regs[i], reg, 0);
+    }
 
-    if (cheri_is_valid(ptr))
-        print_capability_tree(ptr, "pcc");
-
-    for (i = 1; i < sizeof(regs) / sizeof(regs[0]); i++)
-        if (cheri_is_valid(regs[i])) {
-            char prefix[20];
-            sprintf(prefix, "c%d", i);
-            print_capability_tree(regs[i], prefix);
-        }
-
-    if (cheri_is_valid(regs[0]))
-        print_capability_tree(regs[0], "c0");
-
-    ptr = cheri_ddc_get();
-
-    if (cheri_is_valid(ptr))
-        print_capability_tree(ptr, "ddc");
-
-    if (cheri_is_valid(&regs))
-        print_capability_tree(ptr, "stack");
+    print_capability_tree(regs[0], "c0", 0);
+    print_capability_tree(cheri_ddc_get(), "ddc", 0);
+    print_capability_tree(cheri_pcc_get(), "pcc", 0);
 }

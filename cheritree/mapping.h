@@ -28,7 +28,7 @@ struct mapping *cheritree_resolve_mapping(uintptr_t addr);
 void cheritree_print_mappings();
 void cheritree_set_mapping_name(struct mapping *mapping,
     struct mapping *owner, const char *name);
-int cheritree_check_address_valid(void ***pptr, void **paddr);
+int cheritree_dereference_address(void ***pptr, void **paddr);
 
 
 /*

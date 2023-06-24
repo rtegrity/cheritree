@@ -297,7 +297,7 @@ void cheritree_print_mappings()
 }
 
 
-int cheritree_check_address_valid(void ***pptr, void **paddr)
+int cheritree_dereference_address(void ***pptr, void **paddr)
 {
     uintptr_t addr = (uintptr_t)*pptr;
     struct mapping *mapping = cheritree_resolve_mapping(addr);
