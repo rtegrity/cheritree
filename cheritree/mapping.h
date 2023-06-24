@@ -16,15 +16,15 @@
  *  Memory mapping.
  */
 typedef struct mapping {
-    uintptr_t start;            // Start address
-    uintptr_t end;              // End address
+    addr_t start;               // Start address
+    addr_t end;                 // End address
     int flags;                  // Mapping flags
     int base;                   // Start of image (offset)
     string_t pathstr;           // Path string
     string_t namestr;           // Name string
 } mapping_t;
 
-mapping_t *cheritree_resolve_mapping(uintptr_t addr);
+mapping_t *cheritree_resolve_mapping(addr_t addr);
 void cheritree_print_mappings();
 void cheritree_set_mapping_name(mapping_t *mapping,
     mapping_t *owner, const char *name);

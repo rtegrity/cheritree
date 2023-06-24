@@ -11,6 +11,23 @@
 
 
 /*
+ *  Integer for any valid address.
+ */
+
+#ifdef __PTRADDR_TYPE__
+typedef ptraddr_t addr_t;
+#if __PTRADDR_WIDTH__ == 64
+#define PRIxADDR    PRIx64
+#else
+#define PRIxADDR    PRIx32
+#endif
+#else
+typedef __uint64_t addr_t;
+#define PRIxADDR    PRIx64
+#endif
+
+
+/*
  *  Linear vector, grown on demand.
  *
  *  Note: A linear vector is used instead of more flexible

@@ -22,7 +22,7 @@ static void flags_to_str(int flags, char *s, size_t len);
 static int str_to_flags(char *s, size_t len);
 
 
-static mapping_t *find_mapping(uintptr_t addr)
+static mapping_t *find_mapping(addr_t addr)
 {
     int i;
 
@@ -59,7 +59,7 @@ void cheritree_set_mapping_name(mapping_t *mapping,
 
 static void add_mapping_name(mapping_t *mapping)
 {
-    uintptr_t start = mapping->start, end = mapping->end;
+    addr_t start = mapping->start, end = mapping->end;
 
     // Copy any previously identified name
 
@@ -74,20 +74,20 @@ static void add_mapping_name(mapping_t *mapping)
 
     // Check for current stack mapping
 
-    if (start <= (uintptr_t)&mapping && (uintptr_t)&mapping < end) {
+    if (start <= (addr_t)&mapping && (addr_t)&mapping < end) {
         cheritree_set_mapping_name(mapping, NULL, "stack");
         return;
     }
 
     // Check for current heap mapping
 
-    if (start <= (uintptr_t)mapping && (uintptr_t)mapping < end)
+    if (start <= (addr_t)mapping && (addr_t)mapping < end)
         cheritree_set_mapping_name(mapping, NULL, "heap");
 }
 
 
-static int add_mapping(struct vec *v, uintptr_t start,
-    uintptr_t end, int flags, char *path)
+static int add_mapping(struct vec *v, addr_t start,
+    addr_t end, int flags, char *path)
 {
     mapping_t *mapping = (mapping_t *)cheritree_vec_alloc(v, 1);
     mapping_t *base = NULL;
@@ -169,7 +169,7 @@ static void print_mapping(mapping_t *mapping)
 
     flags_to_str(getflags(mapping), s, sizeof(s));
 
-    printf("%#" PRIxPTR "-%#" PRIxPTR " %s %s %s %s [base %#" PRIxPTR "]\n",
+    printf("%#" PRIxADDR "-%#" PRIxADDR " %s %s %s %s [base %#" PRIxADDR "]\n",
         mapping->start, mapping->end, &s[0], &s[6], &s[12],
         (*getpath(mapping) ? getpath(mapping) : getname(mapping)),
         mapping[mapping->base].start);
@@ -179,12 +179,12 @@ static void print_mapping(mapping_t *mapping)
 static int load_mapping(char *buffer, struct vec *v)
 {
     char s[15], path[PATH_MAX];
-    uintptr_t start, end;
+    addr_t start, end;
 
     strcpy(path, "");
     memset(s, 0, sizeof(s));
 
-    if (sscanf(buffer, "%*d %" PRIxPTR " %" PRIxPTR
+    if (sscanf(buffer, "%*d %" PRIxADDR " %" PRIxADDR
             " %5s %*d %*d %*d %*d %5s %2s %s", &start, &end,
             &s[0], &s[6], &s[12], path) < 5)
         return 1;
@@ -227,7 +227,7 @@ static void print_mapping(mapping_t *mapping)
 
     flags_to_str(getflags(mapping), s, sizeof(s));
 
-    printf("%#" PRIxPTR "-%#" PRIxPTR " %s %s [base %#" PRIxPTR "]\n",
+    printf("%#" PRIxADDR "-%#" PRIxADDR " %s %s [base %#" PRIxADDR "]\n",
         mapping->start, mapping->end, s,
         (*getpath(mapping) ? getpath(mapping) : getname(mapping)),
         mapping[mapping->base].start);
@@ -237,12 +237,12 @@ static void print_mapping(mapping_t *mapping)
 static int load_mapping(char *buffer, struct vec *v)
 {
     char s[5], path[PATH_MAX];
-    uintptr_t start, end;
+    addr_t start, end;
 
     strcpy(path, "");
     memset(s, 0, sizeof(s));
 
-    if (sscanf(buffer, "%" PRIxPTR "-%" PRIxPTR
+    if (sscanf(buffer, "%" PRIxADDR "-%" PRIxADDR
             " %4s %*x %*d:%*d %*d %s", &start, &end, s, path) < 4)
         return 1;
 
@@ -269,7 +269,7 @@ static void load_mappings()
 #endif /* __linux__ */
 
 
-mapping_t *cheritree_resolve_mapping(uintptr_t addr)
+mapping_t *cheritree_resolve_mapping(addr_t addr)
 {
     mapping_t *mapping = find_mapping(addr);
 
@@ -299,7 +299,7 @@ void cheritree_print_mappings()
 
 int cheritree_dereference_address(void ***pptr, void **paddr)
 {
-    uintptr_t addr = (uintptr_t)*pptr;
+    addr_t addr = (addr_t)*pptr;
     mapping_t *mapping = cheritree_resolve_mapping(addr);
 
     if (!mapping) return 0;

@@ -20,15 +20,15 @@ typedef struct image {
 } image_t;
 
 typedef struct symbol {
-    uintptr_t value;        // Symbol value
+    addr_t value;           // Symbol value
     string_t namestr;       // Symbol name
     char type;              // Type
 } symbol_t;
 
 void cheritree_load_symbols(const char *path);
 void cheritree_print_symbols(const char *path);
-symbol_t *cheritree_find_symbol(const char *path, uintptr_t base, uintptr_t addr);
-const char *cheritree_find_type(const char *path, uintptr_t base, uintptr_t start, uintptr_t end);
+symbol_t *cheritree_find_symbol(const char *path, addr_t base, addr_t addr);
+const char *cheritree_find_type(const char *path, addr_t base, addr_t start, addr_t end);
 
 
 /*

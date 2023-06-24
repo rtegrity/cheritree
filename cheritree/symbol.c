@@ -35,7 +35,7 @@ static image_t *find_image(const char *path)
 
 static void print_symbol(const symbol_t *symbol)
 {
-    printf("%#" PRIxPTR " %c %s\n", symbol->value,
+    printf("%#" PRIxADDR " %c %s\n", symbol->value,
         symbol->type, getname(symbol));
 }
 
@@ -55,9 +55,9 @@ void cheritree_print_symbols(const char *path)
 static int load_symbol(char *buffer, struct vec *v)
 {
     char type[2], name[1024];
-    uintptr_t value;
+    addr_t value;
 
-    if (sscanf(buffer, "%" PRIxPTR " %1s %1023s", &value, type, name) != 3)
+    if (sscanf(buffer, "%" PRIxADDR " %1s %1023s", &value, type, name) != 3)
         return 1;
 
     symbol_t *symbol = (symbol_t *)cheritree_vec_alloc(v, 1);
@@ -96,7 +96,7 @@ void cheritree_load_symbols(const char *path)
 
 
 const char *cheritree_find_type(const char *path,
-    uintptr_t base, uintptr_t start, uintptr_t end)
+    addr_t base, addr_t start, addr_t end)
 {
     const image_t *image = find_image(path);
     int i;
@@ -121,7 +121,7 @@ const char *cheritree_find_type(const char *path,
 
 
 symbol_t *cheritree_find_symbol(const char *path,
-    uintptr_t base, uintptr_t addr)
+    addr_t base, addr_t addr)
 {
     const image_t *image = find_image(path);
     int i;

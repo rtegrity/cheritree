@@ -28,15 +28,15 @@ static int nprinted;
 
 void _cheritree_init(void *function, void *stack)
 {
-    mapping_t *functionmap = cheritree_resolve_mapping((uintptr_t)function);
-    mapping_t *stackmap = cheritree_resolve_mapping((uintptr_t)stack);
+    mapping_t *functionmap = cheritree_resolve_mapping((addr_t)function);
+    mapping_t *stackmap = cheritree_resolve_mapping((addr_t)stack);
     cheritree_set_mapping_name(stackmap, functionmap, "stack");
 }
 
 
 static void print_address(void *vaddr, char *name, int depth)
 {
-    uintptr_t addr = cheri_address_get(vaddr);
+    addr_t addr = (addr_t)cheri_address_get(vaddr);
     mapping_t *mapping = cheritree_resolve_mapping(addr);
     symbol_t *symbol;
     size_t offset;
