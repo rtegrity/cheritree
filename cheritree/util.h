@@ -13,7 +13,6 @@
 /*
  *  Integer for any valid address.
  */
-
 #ifdef __PTRADDR_TYPE__
 typedef ptraddr_t addr_t;
 #if __PTRADDR_WIDTH__ == 64
@@ -25,6 +24,18 @@ typedef ptraddr_t addr_t;
 typedef __uint64_t addr_t;
 #define PRIxADDR    PRIx64
 #endif
+
+
+/*
+ *  Address range.
+ *
+ *  Note: Integers are used instead of pointers to minimise the
+ *  number of capabilities introduced.
+ */
+typedef struct range {
+    addr_t start;       // Start of range
+    addr_t end;         // End of range
+} range_t;
 
 
 /*

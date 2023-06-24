@@ -19,7 +19,7 @@
 #include "symbol.h"
 
 
-static void *printed[8192];
+static range_t printed[8192];
 static int nprinted;
 
 
@@ -92,13 +92,12 @@ static int get_pointer_range(void *vaddr, void ***pstart, uintptr_t *pend)
 
 static int is_printed(void *addr)
 {
+    addr_t start = cheri_base_get(addr);
+    addr_t end = start + cheri_length_get(addr);
     int i = 0;
 
     for (; i < nprinted; i++)
-        if (printed[i] == addr || 
-                (cheri_base_get(printed[i]) <= cheri_address_get(addr)
-                && cheri_address_get(addr) + sizeof(void *) <=
-                    cheri_base_get(printed[i]) + cheri_length_get(printed[i])))
+        if (printed[i].start <= start && end <= printed[i].end)
             return 1;
 
     if (i >= sizeof(printed) / sizeof(printed[0])) {
@@ -106,7 +105,8 @@ static int is_printed(void *addr)
         exit(1);
     }
 
-    printed[nprinted++] = addr;
+    printed[nprinted].start = start;
+    printed[nprinted++].end = end;
     return 0;
 }
 
@@ -135,12 +135,10 @@ void _cheritree_find_capabilities(void **regs, int nregs)
 
     nprinted = 0;
 
-    for (i = 1; i < nregs && i < 32; i++) {
+    for (i = 0; i < nregs && i < 32; i++) {
         sprintf(reg, "c%d", i);
         print_capability_tree(regs[i], reg, 0);
     }
-
-    print_capability_tree(regs[0], "c0", 0);
 
     if (nregs > 32) print_capability_tree(regs[32], "ddc", 0);
     if (nregs > 33) print_capability_tree(regs[33], "pcc", 0);
