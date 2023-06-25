@@ -17,6 +17,8 @@ nm --print-size --extern-only lib1.so
 ## CheriTree
 
 Unit test code
+Stub with register save trampoline 
+Access function to memory to allow remote access to process or gdb 
 
 ## Library init routines
 
