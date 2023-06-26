@@ -6,31 +6,7 @@
 
 #include <machine/asm.h>
 
-ENTRY(cheritree_saveregs)
-	/* Save the registers */
-	stp	c0, c1, [c0], #(CAP_WIDTH * 2)
-	stp	c2, c3, [c0], #(CAP_WIDTH * 2)
-	stp	c4, c5, [c0], #(CAP_WIDTH * 2)
-	stp	c6, c7, [c0], #(CAP_WIDTH * 2)
-	stp	c8, c9, [c0], #(CAP_WIDTH * 2)
-	stp	c10, c11, [c0], #(CAP_WIDTH * 2)
-	stp	c12, c13, [c0], #(CAP_WIDTH * 2)
-	stp	c14, c15, [c0], #(CAP_WIDTH * 2)
-	stp	c16, c17, [c0], #(CAP_WIDTH * 2)
-	stp	c18, c19, [c0], #(CAP_WIDTH * 2)
-	stp	c20, c21, [c0], #(CAP_WIDTH * 2)
-	stp	c22, c23, [c0], #(CAP_WIDTH * 2)
-	stp	c24, c25, [c0], #(CAP_WIDTH * 2)
-	stp	c26, c27, [c0], #(CAP_WIDTH * 2)
-	stp	c28, C29, [c0], #(CAP_WIDTH * 2)
-	stp	c30, C31, [c0], #(CAP_WIDTH * 2)
-	mrs c1, ddc
-   	str c1, [c0], #(CAP_WIDTH)
-	ret
-END(cheritree_saveregs)
-
-
-ENTRY(cheritree_find_capabilities)
+ENTRY(cheritree_print_capabilities)
 	/* Preserve a large area of the stack */
 	sub csp, csp, #0x100, lsl #12
 	stp c29, c30, [csp, #-(CAP_WIDTH * 2)]!
@@ -59,9 +35,9 @@ ENTRY(cheritree_find_capabilities)
 
 	add c0, csp, #(CAP_WIDTH * 2)
 	mov w1, #33
-	bl _cheritree_find_capabilities
+	bl _cheritree_print_capabilities
 
 	ldp c29, c30, [csp], #(CAP_WIDTH * 2)
 	add csp, csp, #0x100, lsl #12
 	ret
-END(cheritree_find_capabilities)
+END(cheritree_print_capabilities)

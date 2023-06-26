@@ -113,7 +113,7 @@ static void print_capability_tree(map_t *map,
 }
 
 
-void _cheritree_find_capabilities(void **regs, int nregs)
+void _cheritree_print_capabilities(void **regs, int nregs)
 {
     char reg[20];
     map_t map;

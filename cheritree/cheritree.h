@@ -9,7 +9,7 @@
 
 
 extern int cheritree_print_mappings();
-extern void cheritree_find_capabilities();
+extern void cheritree_print_capabilities();
 
 
 static void cheritree_init() {
