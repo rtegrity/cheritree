@@ -13,7 +13,7 @@
 #include "util.h"
 
 
-static struct vec images;
+static vec_t images;
 
 
 static image_t *find_image(const char *path)
@@ -52,7 +52,7 @@ void cheritree_print_symbols(const char *path)
 }
 
 
-static int load_symbol(char *buffer, struct vec *v)
+static int load_symbol(char *buffer, vec_t *v)
 {
     char type[2], name[1024];
     addr_t value;

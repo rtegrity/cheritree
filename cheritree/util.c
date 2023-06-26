@@ -10,14 +10,14 @@
 #include "util.h"
 
 
-static struct vec strings;
+static vec_t strings;
 
 
 /*
  *  Load vec from FILE handle
  */
 static int load_vec(FILE *fp,
-    int (loadelement)(char *line, struct vec *v), struct vec *v)
+    int (loadelement)(char *line, vec_t *v), vec_t *v)
 {
     while (fp != NULL) {
         char buffer[2048];
@@ -38,7 +38,7 @@ static int load_vec(FILE *fp,
  *  Load from command
  */
 int cheritree_load_from_cmd(const char *cmd,
-    int (loadelement)(char *line, struct vec *v), struct vec *v)
+    int (loadelement)(char *line, vec_t *v), vec_t *v)
 {
     FILE *fp = popen(cmd, "r");
     int rc = load_vec(fp, loadelement, v);
@@ -52,7 +52,7 @@ int cheritree_load_from_cmd(const char *cmd,
  *  Load from path
  */
 int cheritree_load_from_path(const char *path,
-    int (loadelement)(char *line, struct vec *v), struct vec *v)
+    int (loadelement)(char *line, vec_t *v), vec_t *v)
 {
     FILE *fp = fopen(path, "r");
     int rc = load_vec(fp, loadelement, v);
@@ -163,7 +163,7 @@ const char *cheritree_string_get(string_t s)
  *  structures to minimise the number of capabilities introduced.
  *  Memory allocation failures will result in the program exiting.
  */
-void cheritree_vec_init(struct vec *v, size_t size, int expect)
+void cheritree_vec_init(vec_t *v, size_t size, int expect)
 {
     v->addr = NULL;
     v->size = size;
@@ -173,7 +173,7 @@ void cheritree_vec_init(struct vec *v, size_t size, int expect)
 }
 
 
-void *cheritree_vec_alloc(struct vec *v, int n)
+void *cheritree_vec_alloc(vec_t *v, int n)
 {
     char *addr;
 
@@ -198,13 +198,13 @@ void *cheritree_vec_alloc(struct vec *v, int n)
 }
 
 
-void *cheritree_vec_get(const struct vec *v, int index)
+void *cheritree_vec_get(const vec_t *v, int index)
 {
     return (v->addr) ? v->addr + (index * v->size) : NULL;
 }
 
 
-void cheritree_vec_trim(struct vec *v)
+void cheritree_vec_trim(vec_t *v)
 {
     if (v->addr && v->count < v->maxcount) {
         char *ap = realloc(v->addr, v->count * v->size);
@@ -217,7 +217,7 @@ void cheritree_vec_trim(struct vec *v)
 }
 
 
-void cheritree_vec_delete(struct vec *v)
+void cheritree_vec_delete(vec_t *v)
 {
     free(v->addr);
     v->addr = NULL;

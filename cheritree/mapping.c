@@ -15,7 +15,7 @@
 #include "util.h"
 
 
-static struct vec mappings;
+static vec_t mappings;
 
 static void load_mappings();
 static void flags_to_str(int flags, char *s, size_t len);
@@ -86,7 +86,7 @@ static void add_mapping_name(mapping_t *mapping)
 }
 
 
-static int add_mapping(struct vec *v, addr_t start,
+static int add_mapping(vec_t *v, addr_t start,
     addr_t end, int flags, char *path)
 {
     mapping_t *mapping = (mapping_t *)cheritree_vec_alloc(v, 1);
@@ -176,7 +176,7 @@ static void print_mapping(mapping_t *mapping)
 }
 
 
-static int load_mapping(char *buffer, struct vec *v)
+static int load_mapping(char *buffer, vec_t *v)
 {
     char s[15], path[PATH_MAX];
     addr_t start, end;
@@ -196,7 +196,7 @@ static int load_mapping(char *buffer, struct vec *v)
 static void load_mappings()
 {
     char cmd[2048];
-    struct vec v;
+    vec_t v;
 
     sprintf(cmd, "procstat -v %d", getpid());
     cheritree_vec_init(&v, sizeof(mapping_t), 1024);
@@ -234,7 +234,7 @@ static void print_mapping(mapping_t *mapping)
 }
 
 
-static int load_mapping(char *buffer, struct vec *v)
+static int load_mapping(char *buffer, vec_t *v)
 {
     char s[5], path[PATH_MAX];
     addr_t start, end;
@@ -253,7 +253,7 @@ static int load_mapping(char *buffer, struct vec *v)
 static void load_mappings()
 {
     char path[2048];
-    struct vec v;
+    vec_t v;
 
     sprintf(path, "/proc/%d/maps", getpid());
     cheritree_vec_init(&v, sizeof(mapping_t), 1024);

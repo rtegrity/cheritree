@@ -15,7 +15,7 @@
  *  Symbol store.
  */
 typedef struct image {
-    struct vec symbols;     // Symbols
+    vec_t symbols;          // Symbols
     string_t pathstr;       // Pathname
 } image_t;
 

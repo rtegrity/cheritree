@@ -33,19 +33,19 @@ typedef __uint64_t addr_t;
  *  structures to minimise the number of capabilities introduced.
  *  Memory allocation failures will result in the program exiting.
  */
-struct vec {
+typedef struct vec {
     char *addr;         // Array of elements
     int count;          // Elements in use
     int maxcount;       // Elements allocated
     size_t size;        // Element size
     int expect;         // Allocation count
-};
+} vec_t;
 
-void cheritree_vec_init(struct vec *v, size_t size, int expect);
-void *cheritree_vec_alloc(struct vec *v, int n);
-void *cheritree_vec_get(const struct vec *v, int index);
-void cheritree_vec_trim(struct vec *v);
-void cheritree_vec_delete(struct vec *v);
+void cheritree_vec_init(vec_t *v, size_t size, int expect);
+void *cheritree_vec_alloc(vec_t *v, int n);
+void *cheritree_vec_get(const vec_t *v, int index);
+void cheritree_vec_trim(vec_t *v);
+void cheritree_vec_delete(vec_t *v);
 
 
 /*
@@ -60,7 +60,7 @@ typedef struct range {
     addr_t end;         // End of range
 } range_t;
 
-typedef struct vec map_t;
+typedef vec_t map_t;
 
 void cheritree_map_init(map_t *v, int expect);
 int cheritree_map_add(map_t *v, addr_t start, addr_t end);
@@ -95,9 +95,9 @@ const char *cheritree_string_get(string_t s);
  *  Load array from command or path.
  */
 int cheritree_load_from_cmd(const char *cmd,
-    int (loadelement)(char *line, struct vec *v), struct vec *v);
+    int (loadelement)(char *line, vec_t *v), vec_t *v);
 
 int cheritree_load_from_path(const char *path,
-    int (loadelement)(char *line, struct vec *v), struct vec *v);
+    int (loadelement)(char *line, vec_t *v), vec_t *v);
 
 #endif /* _CHERITREE_UTIL_H_ */
