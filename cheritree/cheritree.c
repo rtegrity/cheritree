@@ -130,11 +130,6 @@ void _cheritree_find_capabilities(void **regs, int nregs)
     if (nregs > 32) print_capability_tree(&map, regs[32], "ddc", 0);
     if (nregs > 33) print_capability_tree(&map, regs[33], "pcc", 0);
 
-    printf("nprinted %d\n", getcount(&map));
-    range_t *range = (range_t *)map.addr;
-
-    for (i = 0; i < getcount(&map); i++)
-        printf("%" PRIxADDR "-%" PRIxADDR "\n", range[i].start, range[i].end);
-
+    cheritree_map_print(&map);
     cheritree_map_delete(&map);
 }

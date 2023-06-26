@@ -116,6 +116,18 @@ int cheritree_map_add(map_t *v, addr_t start, addr_t end)
 }
 
 
+void cheritree_map_print(map_t *v)
+{
+    range_t *range = (range_t *)v->addr;
+    int i;
+
+    printf("Map at %p with %d entries:\n", v, getcount(v));
+
+    for (i = 0; i < getcount(v); i++)
+        printf("%" PRIxADDR "-%" PRIxADDR "\n", range[i].start, range[i].end);
+}
+
+
 void cheritree_map_reset(map_t *v)
 {
     v->count = 0;

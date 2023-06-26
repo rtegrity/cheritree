@@ -16,6 +16,7 @@ extern void _cheritree_find_capabilities(void **regs, int nregs);
 
 void cheritree_find_capabilities()
 {
+    void *vec[64 * 1024];
     void *regs[34];
 
     cheritree_saveregs(regs);
