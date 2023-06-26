@@ -19,10 +19,6 @@
 #include "symbol.h"
 
 
-static range_t printed[8192];
-static int nprinted;
-
-
 void _cheritree_init(void *function, void *stack)
 {
     mapping_t *functionmap = cheritree_resolve_mapping((addr_t)function);
@@ -90,28 +86,17 @@ static int get_pointer_range(void *vaddr, void ***pstart, uintptr_t *pend)
 }
 
 
-static int is_printed(void *addr)
+static int is_printed(map_t *map, void *addr)
 {
     addr_t start = cheri_base_get(addr);
     addr_t end = start + cheri_length_get(addr);
-    int i = 0;
 
-    for (; i < nprinted; i++)
-        if (printed[i].start <= start && end <= printed[i].end)
-            return 1;
-
-    if (i >= sizeof(printed) / sizeof(printed[0])) {
-        fprintf(stderr, "Too many capabilities to print");
-        exit(1);
-    }
-
-    printed[nprinted].start = start;
-    printed[nprinted++].end = end;
-    return 0;
+    return !cheritree_map_add(map, start, end);
 }
 
 
-static void print_capability_tree(void *vaddr, char *name, int depth)
+static void print_capability_tree(map_t *map,
+    void *vaddr, char *name, int depth)
 {
     void **ptr, *p;
     uintptr_t end;
@@ -123,23 +108,33 @@ static void print_capability_tree(void *vaddr, char *name, int depth)
     if (get_pointer_range(vaddr, &ptr, &end))
         for (; (uintptr_t)ptr < end; ptr++)
             if (cheritree_dereference_address(&ptr, &p))
-                if (cheri_is_valid(p) && !is_printed(p))
-                    print_capability_tree(p, name, depth+1);
+                if (cheri_is_valid(p) && !is_printed(map, p))
+                    print_capability_tree(map, p, name, depth+1);
 }
 
 
 void _cheritree_find_capabilities(void **regs, int nregs)
 {
     char reg[20];
+    map_t map;
     int i;
 
-    nprinted = 0;
+    cheritree_map_init(&map, 1024);
+    cheritree_map_reset(&map);
 
     for (i = 0; i < nregs && i < 32; i++) {
         sprintf(reg, "c%d", i);
-        print_capability_tree(regs[i], reg, 0);
+        print_capability_tree(&map, regs[i], reg, 0);
     }
 
-    if (nregs > 32) print_capability_tree(regs[32], "ddc", 0);
-    if (nregs > 33) print_capability_tree(regs[33], "pcc", 0);
+    if (nregs > 32) print_capability_tree(&map, regs[32], "ddc", 0);
+    if (nregs > 33) print_capability_tree(&map, regs[33], "pcc", 0);
+
+    printf("nprinted %d\n", getcount(&map));
+    range_t *range = (range_t *)map.addr;
+
+    for (i = 0; i < getcount(&map); i++)
+        printf("%" PRIxADDR "-%" PRIxADDR "\n", range[i].start, range[i].end);
+
+    cheritree_map_delete(&map);
 }

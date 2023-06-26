@@ -27,18 +27,6 @@ typedef __uint64_t addr_t;
 
 
 /*
- *  Address range.
- *
- *  Note: Integers are used instead of pointers to minimise the
- *  number of capabilities introduced.
- */
-typedef struct range {
-    addr_t start;       // Start of range
-    addr_t end;         // End of range
-} range_t;
-
-
-/*
  *  Linear vector, grown on demand.
  *
  *  Note: A linear vector is used instead of more flexible
@@ -58,6 +46,26 @@ void *cheritree_vec_alloc(struct vec *v, int n);
 void *cheritree_vec_get(const struct vec *v, int index);
 void cheritree_vec_trim(struct vec *v);
 void cheritree_vec_delete(struct vec *v);
+
+
+/*
+ *  Map of address ranges, grown on demand.
+ *
+ *  Note: Integers are used instead of pointers to minimise the
+ *  number of capabilities introduced.
+ */
+
+typedef struct range {
+    addr_t start;       // Start of range
+    addr_t end;         // End of range
+} range_t;
+
+typedef struct vec map_t;
+
+void cheritree_map_init(map_t *v, int expect);
+int cheritree_map_add(map_t *v, addr_t start, addr_t end);
+void cheritree_map_reset(map_t *v);
+void cheritree_map_delete(map_t *v);
 
 
 /*

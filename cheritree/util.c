@@ -63,6 +63,72 @@ int cheritree_load_from_path(const char *path,
 
 
 /*
+ *  Map of address ranges, grown on demand.
+ *
+ *  Note: Integers are used instead of pointers to minimise the
+ *  number of capabilities introduced.
+ */
+void cheritree_map_init(map_t *v, int expect)
+{
+    cheritree_vec_init(v, sizeof(range_t), expect);
+}
+
+
+int cheritree_map_add(map_t *v, addr_t start, addr_t end)
+{
+    range_t *range = (range_t *)v->addr;
+    int i = 0, j;
+
+    for (i = 0; i < v->count; i++) {
+        if (range[i].start <= start && end <= range[i].end) return 0;
+        if (start <= range[i].end) break;
+    }
+
+    if (i < v->count && end >= range[i].start) {
+        if (start < range[i].start)
+            range[i].start = start;
+
+        if (end > range[i].end)
+            range[i].end = end;
+
+        for (j = i; j < v->count && end >= range[j].start; j++)
+            if (range[j].end > end)
+                range[i].end = range[j].end;
+
+        if (j > i + 1) {
+            if (j < v->count)
+                memmove(&range[i+1], &range[j], (v->count-j) * sizeof(range_t));
+            v->count -= (j-i-1);
+        }
+
+        return 1;
+    }
+
+    cheritree_vec_alloc(v, 1);
+    range = (range_t *)v->addr;
+
+    if (i < v->count - 1)
+        memmove(&range[i+1], &range[i], (v->count-i-1) * sizeof(range_t));
+
+    range[i].start = start;
+    range[i].end = end;
+    return 1;
+}
+
+
+void cheritree_map_reset(map_t *v)
+{
+    v->count = 0;
+}
+
+
+void cheritree_map_delete(map_t *v)
+{
+    cheritree_vec_delete(v);
+}
+
+
+/*
  *  String store, grown on demand.
  *
  *  Note: Strings are referenced by offset to minimise the number
