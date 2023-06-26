@@ -119,16 +119,21 @@ void _cheritree_find_capabilities(void **regs, int nregs)
     map_t map;
     int i;
 
+    if (nregs > 30)
+        _cheritree_init(regs[30], regs);
+
     cheritree_map_init(&map, 1024);
-    cheritree_map_reset(&map);
+    cheritree_map_add(&map, (addr_t)regs, (addr_t)&regs[nregs]);
+
+    print_capability_tree(&map, regs, "csp", 0);
 
     for (i = 0; i < nregs && i < 32; i++) {
         sprintf(reg, "c%d", i);
         print_capability_tree(&map, regs[i], reg, 0);
     }
 
-    if (nregs > 32) print_capability_tree(&map, regs[32], "ddc", 0);
-    if (nregs > 33) print_capability_tree(&map, regs[33], "pcc", 0);
+    if (nregs > 32)
+        print_capability_tree(&map, regs[32], "ddc", 0);
 
     cheritree_map_print(&map);
     cheritree_map_delete(&map);

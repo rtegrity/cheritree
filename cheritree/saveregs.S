@@ -24,5 +24,44 @@ ENTRY(cheritree_saveregs)
 	stp	c26, c27, [c0], #(CAP_WIDTH * 2)
 	stp	c28, C29, [c0], #(CAP_WIDTH * 2)
 	stp	c30, C31, [c0], #(CAP_WIDTH * 2)
+	mrs c1, ddc
+   	str c1, [c0], #(CAP_WIDTH)
 	ret
 END(cheritree_saveregs)
+
+
+ENTRY(cheritree_find_capabilities)
+	/* Preserve a large area of the stack */
+	sub csp, csp, #0x100, lsl #12
+	stp c29, c30, [csp, #-(CAP_WIDTH * 2)]!
+	stp c29, c30, [csp, #(CAP_WIDTH * 31)]
+	mov c29, csp
+
+   	/* Save the registers */
+	stp c0, c1, [csp, #(CAP_WIDTH * 2)]
+	stp	c2, c3, [csp, #(CAP_WIDTH * 4)]
+	stp	c4, c5, [csp, #(CAP_WIDTH * 6)]
+	stp	c6, c7, [csp, #(CAP_WIDTH * 8)]
+	stp	c8, c9, [csp, #(CAP_WIDTH * 10)]
+	stp	c10, c11, [csp, #(CAP_WIDTH * 12)]
+	stp	c12, c13, [csp, #(CAP_WIDTH * 14)]
+	stp	c14, c15, [csp, #(CAP_WIDTH * 16)]
+	stp	c16, c17, [csp, #(CAP_WIDTH * 18)]
+	stp	c18, c19, [csp, #(CAP_WIDTH * 20)]
+	stp	c20, c21, [csp, #(CAP_WIDTH * 22)]
+	stp	c22, c23, [csp, #(CAP_WIDTH * 24)]
+	stp	c24, c25, [csp, #(CAP_WIDTH * 26)]
+	stp	c26, c27, [csp, #(CAP_WIDTH * 28)]
+	str	C28, [csp, #(CAP_WIDTH * 30)]
+	str	C31, [csp, #(CAP_WIDTH * 33)]
+	mrs c10, ddc
+   	str c10, [csp, #(CAP_WIDTH * 34)]
+
+	add c0, csp, #(CAP_WIDTH * 2)
+	mov w1, #33
+	bl _cheritree_find_capabilities
+
+	ldp c29, c30, [csp], #(CAP_WIDTH * 2)
+	add csp, csp, #0x100, lsl #12
+	ret
+END(cheritree_find_capabilities)
