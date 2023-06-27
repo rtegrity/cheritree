@@ -65,6 +65,7 @@ typedef vec_t map_t;
 
 void cheritree_map_init(map_t *v, int expect);
 int cheritree_map_add(map_t *v, addr_t start, addr_t end);
+int cheritree_map_find(map_t *v, addr_t addr, range_t *prange);
 void cheritree_map_print(map_t *v);
 void cheritree_map_reset(map_t *v);
 void cheritree_map_delete(map_t *v);

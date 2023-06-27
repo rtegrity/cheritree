@@ -101,7 +101,20 @@ static int is_printed(map_t *map, void *addr)
 }
 
 
-static void print_capability_tree(map_t *map,
+static int is_exclude(map_t *exclude, void ***pptr)
+{
+    addr_t addr = (addr_t)*pptr;
+    range_t range;
+
+    if (!cheritree_map_find(exclude, addr, &range))
+        return 0;
+
+    *(char **)pptr += (range.end - sizeof(void *)) - addr;
+    return 1;
+}
+
+
+static void print_capability_tree(map_t *map, map_t *exclude,
     void *vaddr, char *name, void **origin, int depth)
 {
     void **ptr, *p;
@@ -115,32 +128,41 @@ static void print_capability_tree(map_t *map,
 
     if (get_pointer_range(vaddr, &ptr, &end))
         for (; (uintptr_t)ptr < end; ptr++)
-            if (cheritree_dereference_address(&ptr, &p))
+            if (cheritree_dereference_address(&ptr, &p) && !is_exclude(exclude, &ptr))
                 if (cheri_is_valid(p) && !is_printed(map, p))
-                    print_capability_tree(map, p, name, ptr, depth+1);
+                    print_capability_tree(map, exclude, p, name, ptr, depth+1);
 }
 
 
 void _cheritree_print_capabilities(void **regs, int nregs)
 {
+    map_t map, exclude;
+    mapping_t *stack;
     char reg[20];
-    map_t map;
     int i;
 
     if (nregs > 30)
         _cheritree_init(regs[30], regs);
 
     cheritree_map_init(&map, 1024);
+    cheritree_map_init(&exclude, 100);
 
-    print_capability_tree(&map, regs, "csp", NULL, 0);
+    // Exclude cheritree stack frames
+
+    stack = cheritree_resolve_mapping((addr_t)regs);
+    cheritree_map_add(&exclude, (stack) ? stack->start : (addr_t)regs,
+        (addr_t)(regs + nregs));
+
+    print_capability_tree(&map, &exclude, regs, "csp", NULL, 0);
 
     for (i = 0; i < nregs && i < 31; i++) {
         sprintf(reg, "c%d", i);
-        print_capability_tree(&map, regs[i], reg, NULL, 0);
+        print_capability_tree(&map, &exclude, regs[i], reg, NULL, 0);
     }
 
     if (nregs > 31)
-        print_capability_tree(&map, regs[31], "ddc", NULL, 0);
+        print_capability_tree(&map, &exclude, regs[31], "ddc", NULL, 0);
 
     cheritree_map_delete(&map);
+    cheritree_map_delete(&exclude);
 }

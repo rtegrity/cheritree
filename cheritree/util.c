@@ -77,7 +77,7 @@ void cheritree_map_init(map_t *v, int expect)
 int cheritree_map_add(map_t *v, addr_t start, addr_t end)
 {
     range_t *range = (range_t *)v->addr;
-    int i = 0, j;
+    int i, j;
 
     for (i = 0; i < v->count; i++) {
         if (range[i].start <= start && end <= range[i].end) return 0;
@@ -113,6 +113,24 @@ int cheritree_map_add(map_t *v, addr_t start, addr_t end)
     range[i].start = start;
     range[i].end = end;
     return 1;
+}
+
+
+int cheritree_map_find(map_t *v, addr_t addr, range_t *prange)
+{
+    range_t *range = (range_t *)v->addr;
+    int i;
+
+    for (i = 0; i < v->count; i++) {
+        if (range[i].start <= addr && addr < range[i].end) {
+            *prange = range[i];
+            return 1;
+        }
+        
+        if (addr <= range[i].end) break;
+    }
+
+    return 0;
 }
 
 
