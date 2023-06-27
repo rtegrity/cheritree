@@ -1,6 +1,6 @@
 # binaries
-comp
-shared
+c18n-example
+shared-example
 *.core
 
 # Prerequisites
