@@ -2,7 +2,7 @@
 
 CheriTree provides a library to help understand the impact of library compartmentalisation on an application. It prints a capability derivation tree for the running application, by recursively searching through the registers and stack, looking for all valid capabilities.
 
-[rtegrity](https://rtegrity.com/) has developed the project as part of the [Digital Security by Design](https://dsbtech.com) Technology Access Program.
+[rtegrity](https://rtegrity.com/) has developed the project as part of the [Digital Security by Design](https://www.dsbd.tech/) Technology Access Program.
 
 # In this ReadMe
 
@@ -113,7 +113,7 @@ Contributions are welcome! In the initial stages of the project, please contact 
 
 <a id="acknowledge"></a>
 ## Acknowledgements
-[rtegrity](https://rtegrity.com/) would like to acknowledge the support of the [Digital Security by Design](https://dsbtech.com) Technology Access Program.
+[rtegrity](https://rtegrity.com/) would like to acknowledge the support of the [Digital Security by Design](https://www.dsbd.tech/) Technology Access Program.
 
 <a id="core"></a>
 ## Core Maintainers
