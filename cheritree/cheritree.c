@@ -114,7 +114,7 @@ static void print_capability_tree(map_t *map,
     if (!depth && is_printed(map, vaddr)) return;
 
     if (get_pointer_range(vaddr, &ptr, &end))
-        for (; (uintptr_t)ptr < end; ptr++) {
+        for (; (uintptr_t)ptr < end; ptr++)
             if (cheritree_dereference_address(&ptr, &p))
                 if (cheri_is_valid(p) && !is_printed(map, p))
                     print_capability_tree(map, p, name, ptr, depth+1);
@@ -142,6 +142,5 @@ void _cheritree_print_capabilities(void **regs, int nregs)
     if (nregs > 31)
         print_capability_tree(&map, regs[31], "ddc", NULL, 0);
 
-    cheritree_map_print(&map);
     cheritree_map_delete(&map);
 }
