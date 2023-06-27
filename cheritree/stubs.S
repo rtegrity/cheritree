@@ -21,7 +21,7 @@ ENTRY(cheritree_print_capabilities)
 	.cfi_offset c29, -48
 
    	/* Save the registers */
-	stp c0, c1, [csp, #(CAP_WIDTH)]
+	stp c0, c1, [csp]
 	stp	c2, c3, [csp, #(CAP_WIDTH * 2)]
 	stp	c4, c5, [csp, #(CAP_WIDTH * 4)]
 	stp	c6, c7, [csp, #(CAP_WIDTH * 6)]
