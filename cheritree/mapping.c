@@ -273,6 +273,11 @@ mapping_t *cheritree_resolve_mapping(addr_t addr)
 {
     mapping_t *mapping = find_mapping(addr);
 
+    if (mapping && getprot(mapping) == CT_PROT_NONE) {
+        load_mappings();
+        mapping = find_mapping(addr);
+    }
+
     if (!mapping) {
         load_mappings();
         return find_mapping(addr);
@@ -300,7 +305,12 @@ void cheritree_print_mappings()
 int cheritree_dereference_address(void ***pptr, void **paddr)
 {
     addr_t addr = (addr_t)*pptr;
-    mapping_t *mapping = cheritree_resolve_mapping(addr);
+    mapping_t *mapping = find_mapping(addr);
+
+    if (!mapping) {
+        load_mappings();
+        mapping = find_mapping(addr);
+    }
 
     if (!mapping) return 0;
 
