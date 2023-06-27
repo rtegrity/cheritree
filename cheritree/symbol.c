@@ -60,6 +60,8 @@ static int load_symbol(char *buffer, vec_t *v)
     if (sscanf(buffer, "%" PRIxADDR " %1s %1023s", &value, type, name) != 3)
         return 1;
 
+    if (name[0] == '$') return 1;
+
     symbol_t *symbol = (symbol_t *)cheritree_vec_alloc(v, 1);
     setname(symbol, name);
     symbol->value = value;
@@ -83,11 +85,11 @@ void cheritree_load_symbols(const char *path)
     cheritree_vec_init(&image->symbols, sizeof(symbol_t), 1024);
     setpath(image, path);
 
-    sprintf(cmd, "nm -ne %s 2>/dev/null", path);
+    sprintf(cmd, "nm -ne --defined-only %s 2>/dev/null", path);
     if (cheritree_load_from_cmd(cmd, load_symbol, &image->symbols)) return;
 
     // Retry with dynamic symbols
-    sprintf(cmd, "nm -Dne %s", path);
+    sprintf(cmd, "nm -Dne --defined-only %s", path);
     if (cheritree_load_from_cmd(cmd, load_symbol, &image->symbols)) return;
 
     fprintf(stderr, "Unable to load symbols");
