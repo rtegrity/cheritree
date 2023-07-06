@@ -1,0 +1,17 @@
+#-
+#   SPDX-License-Identifier: BSD-3-Clause
+#
+#   Copyright (c) 2023, rtegrity ltd. All rights reserved.
+#
+{
+	global:
+
+	# public functions
+	lib3_init;
+	lib3_access_int;
+
+	# public data
+    lib3_int;
+
+	local: *;
+};

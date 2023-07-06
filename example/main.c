@@ -12,6 +12,7 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
+#include <dlfcn.h>
 #ifdef __CHERI_PURE_CAPABILITY__
 #include <cheriintrin.h>
 #endif
@@ -63,6 +64,41 @@ void check_string_arg()
 }
 
 
+/*
+ *  Check dynamic loading.
+ */
+static int library_int;
+
+void register_library(int *ptr)
+{
+    library_int = *ptr;
+}
+
+void check_dynamic_loading()
+{
+    void *dlhandle = dlopen("lib3.so", RTLD_LAZY);
+    typedef int (*intfn_t)();
+    typedef void (*init_t)();
+    intfn_t getint;
+    init_t init;
+    int *intptr;
+
+    assert(dlhandle != NULL);
+
+    init = (init_t)dlsym(dlhandle, "lib3_init");
+    assert(init != NULL);
+    init();
+
+    getint = (intfn_t)dlsym(dlhandle, "lib3_access_int");
+    assert(getint != NULL);
+    assert(getint() == library_int);
+
+    intptr = (int *)dlsym(dlhandle, "lib3_int");
+    assert(intptr != NULL);
+    assert(*intptr == library_int);
+}
+
+
 int main (int argc, char **argv)
 {
     cheritree_init();
@@ -75,8 +111,10 @@ int main (int argc, char **argv)
 
     check_string_arg();
 
-    cheritree_print_mappings();
-    cheritree_print_capabilities();
+    check_dynamic_loading();
+
+//  cheritree_print_mappings();
+//  cheritree_print_capabilities();
 
     return 0;
 }

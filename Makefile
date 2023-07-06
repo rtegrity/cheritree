@@ -7,11 +7,11 @@ rebuild: clean all
 
 all:	shared-example c18n-example
 
-shared-example:	example/main.c lib1.so lib2.so cheritree.so cheritreestub.a
-	cc $(CFLAGS) example/main.c cheritreestub.a -o shared-example lib1.so lib2.so cheritree.so
+shared-example:	example/main.c lib1.so lib2.so lib3.so cheritree.so cheritreestub.a
+	cc $(CFLAGS) -rdynamic example/main.c cheritreestub.a -o shared-example lib1.so lib2.so cheritree.so
 
-c18n-example:	example/main.c lib1.so lib2.so cheritree.so cheritreestub.a
-	cc $(CFLAGS) $(C18NFLAGS) example/main.c cheritreestub.a -o c18n-example lib1.so lib2.so cheritree.so
+c18n-example:	example/main.c lib1.so lib2.so lib3.so cheritree.so cheritreestub.a
+	cc $(CFLAGS) -rdynamic $(C18NFLAGS) example/main.c cheritreestub.a -o c18n-example lib1.so lib2.so cheritree.so
 
 cheritree.so: src/cheritree.c src/mapping.c src/symbol.c \
 		src/util.c src/stubs.S cheritreestub.a
@@ -28,5 +28,8 @@ lib1.so: example/lib1/lib1.c cheritreestub.a
 lib2.so: example/lib2/lib2.c cheritreestub.a
 	cc -fPIC -shared $(CFLAGS) -Wl,--version-script=example/lib2/lib2.map example/lib2/lib2.c cheritreestub.a -o lib2.so
 
+lib3.so: example/lib3/lib3.c cheritreestub.a
+	cc -fPIC -shared $(CFLAGS) -Wl,--version-script=example/lib3/lib3.map example/lib3/lib3.c cheritreestub.a -o lib3.so
+
 clean:
-	rm -f lib1.so lib2.so cheritree.so cheritreestub.a stubs.o shared-example c18n-example
+	rm -f lib1.so lib2.so lib3.so cheritree.so cheritreestub.a stubs.o shared-example c18n-example
