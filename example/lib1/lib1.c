@@ -13,6 +13,9 @@
 #include <cheritree.h>
 
 
+int lib1_access_int();
+
+
 int lib1_int = 30;
 int lib1_int_bounds = 40;
 
@@ -20,6 +23,9 @@ int lib1_int_bounds = 40;
 void lib1_init()
 {
     cheritree_init();
+
+    // Force symbol binding for local access
+    lib1_access_int();
 }
 
 
@@ -29,6 +35,15 @@ void lib1_init()
 int lib1_access_int()
 {
     return lib1_int;
+}
+
+
+/*
+ *  Return the value of a const int using a local call.
+ */
+int lib1_local_access_int()
+{
+    return lib1_access_int();
 }
 
 

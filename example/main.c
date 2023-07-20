@@ -25,7 +25,7 @@
  *  Check that an external int can be accessed and that
  *  the bounds are preserved.
  */
-void access_int()
+void check_access_int()
 {
 #ifdef __CHERI_PURE_CAPABILITY__
     assert(cheri_length_get(&lib1_int) == sizeof(lib1_int));
@@ -39,12 +39,22 @@ void access_int()
  *  Check that the bounds of an external integer are
  *  based on the definition rather than the reference.
  */
-void access_int_bounds()
+void check_access_int_bounds()
 {
     extern long long lib1_int_bounds;
 #ifdef __CHERI_PURE_CAPABILITY__
     assert(cheri_length_get(&lib1_int_bounds) == sizeof(lib1_int));
 #endif
+}
+
+
+/*
+ *  Check that an external int can be accessed through a
+ *  local call inside the library.
+ */
+void check_local_access_int()
+{
+    assert(lib1_local_access_int() == lib1_int);
 }
 
 
@@ -106,11 +116,11 @@ int main (int argc, char **argv)
     lib1_init();
     lib2_init();
 
-    access_int();
-    access_int_bounds();
+    check_access_int();
+    check_access_int_bounds();
+    check_local_access_int();
 
     check_string_arg();
-
     check_dynamic_loading();
 
 //  cheritree_print_mappings();

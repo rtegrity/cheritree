@@ -10,4 +10,5 @@ extern int lib1_int;
 
 extern int lib1_init();
 extern int lib1_access_int();
+extern int lib1_local_access_int();
 extern int lib1_check_string_arg(const char *, size_t);
