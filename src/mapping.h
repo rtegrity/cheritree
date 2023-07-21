@@ -27,7 +27,7 @@ typedef struct mapping {
 mapping_t *cheritree_resolve_mapping(addr_t addr);
 void cheritree_print_mappings();
 void cheritree_set_mapping_name(mapping_t *mapping,
-    mapping_t *owner, const char *name);
+    const char *owner, const char *name);
 int cheritree_dereference_address(void ***pptr, void **paddr);
 
 

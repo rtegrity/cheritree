@@ -21,9 +21,14 @@
 
 void _cheritree_init(void *function, void *stack)
 {
-    mapping_t *functionmap = cheritree_resolve_mapping((addr_t)function);
-    mapping_t *stackmap = cheritree_resolve_mapping((addr_t)stack);
-    cheritree_set_mapping_name(stackmap, functionmap, "stack");
+    mapping_t *functionmap, *stackmap;
+    const char *owner;
+    
+    functionmap = cheritree_resolve_mapping((addr_t)function);
+    owner = getname(functionmap);
+
+    stackmap = cheritree_resolve_mapping((addr_t)stack);
+    cheritree_set_mapping_name(stackmap, owner, "stack");
 }
 
 

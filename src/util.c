@@ -249,6 +249,10 @@ void cheritree_vec_trim(vec_t *v)
 
 void cheritree_vec_delete(vec_t *v)
 {
+#ifdef CHERITREE_DEBUG
+    if (v->addr)
+        memset(v->addr, 0x5a, v->maxcount * v->size);
+#endif
     free(v->addr);
     v->addr = NULL;
     v->count = 0;

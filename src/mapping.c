@@ -40,7 +40,7 @@ static mapping_t *find_mapping(addr_t addr)
 
 
 void cheritree_set_mapping_name(mapping_t *mapping,
-    mapping_t *owner, const char *name)
+    const char *owner, const char *name)
 {
     char buf[2048];
 
@@ -49,8 +49,8 @@ void cheritree_set_mapping_name(mapping_t *mapping,
 
     if (strchr(getname(mapping), '!')) return;
 
-    if (owner && *getname(owner))
-        sprintf(buf, "[%s!%s]", getname(owner), name);
+    if (owner && *owner)
+        sprintf(buf, "[%s!%s]", owner, name);
     
     else sprintf(buf, "[%s]", name);
     setname(mapping, buf);
