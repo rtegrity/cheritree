@@ -1,5 +1,5 @@
 INCLUDES=-Iexample/lib1 -Iexample/lib2 -Isrc -I../src
-CFLAGS=-march=morello -mabi=purecap -g $(INCLUDES)
+CFLAGS=-march=morello -mabi=purecap -g $(INCLUDES) -Wl,-Bsymbolic
 # CFLAGS=-march=morello -mabi=aapcs -g $(INCLUDES)
 C18NFLAGS=-Wl,--dynamic-linker=/libexec/ld-elf-c18n.so.1
 
