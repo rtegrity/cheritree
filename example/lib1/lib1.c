@@ -7,11 +7,14 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #ifdef __CHERI_PURE_CAPABILITY__
 #include <cheriintrin.h>
 #endif
 #include <cheritree.h>
 
+
+typedef int (*int_func_t)();
 
 int lib1_access_int();
 
@@ -39,11 +42,29 @@ int lib1_access_int()
 
 
 /*
- *  Return the value of a const int using a local call.
+ *  Return the value of an int using a local call.
  */
 int lib1_local_access_int()
 {
     return lib1_access_int();
+}
+
+
+/*
+ *  Return the value of an int using a function call.
+ */
+int lib1_function_access_int()
+{
+    return lib1_access_int();
+}
+
+
+/*
+ *  Return a function pointer to access the value of an int
+ */
+int_func_t lib1_access_int_function()
+{
+    return lib1_function_access_int;
 }
 
 

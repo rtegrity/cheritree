@@ -59,6 +59,17 @@ void check_local_access_int()
 
 
 /*
+ *  Check that a function pointer from a library will
+ *  correctly access the int.
+ */
+void check_access_int_function()
+{
+    int_func_t fn = lib1_access_int_function();
+    assert(fn() == lib1_int);
+}
+
+
+/*
  *  Check that a string argument can be assessed.
  */
 void check_string_arg()
@@ -119,6 +130,7 @@ int main (int argc, char **argv)
     check_access_int();
     check_access_int_bounds();
     check_local_access_int();
+    check_access_int_function();
 
     check_string_arg();
     check_dynamic_loading();
