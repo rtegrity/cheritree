@@ -2,6 +2,7 @@ INCLUDES=-Iexample/lib1 -Iexample/lib2 -Isrc -I../src
 CFLAGS=-march=morello -mabi=purecap -g $(INCLUDES) -Wl,-Bsymbolic
 # CFLAGS=-march=morello -mabi=aapcs -g $(INCLUDES)
 C18NFLAGS=-Wl,--dynamic-linker=/libexec/ld-elf-c18n.so.1
+#C18NFLAGS=-Wl,--dynamic-linker=$(HOME)/ld-elf-c18n.so.1
 
 rebuild: clean all
 
