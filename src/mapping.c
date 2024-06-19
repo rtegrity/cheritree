@@ -142,35 +142,35 @@ static int add_mapping(vec_t *v, addr_t start,
 
 
 #ifdef __FreeBSD__
-static struct flagmap { int i; char s[6]; int f; } flagmap[] = {
+static struct flagmap { int i; char s[7]; int f; } flagmap[] = {
     { 0, "-----", 0 }, { 0, "r", CT_PROT_READ },
     { 1, "w", CT_PROT_WRITE }, { 2, "x", CT_PROT_EXEC },
     { 3, "R", CT_PROT_READ_CAP }, { 4, "W", CT_PROT_WRITE_CAP },
 
-    { 6, "-----", 0 }, { 6, "U", CT_FLAG_UNMAPPED },
+    { 6, "------", 0 }, { 6, "u", CT_FLAG_UNMAPPED },
     { 6, "G", CT_FLAG_GUARD }, { 6, "C", CT_FLAG_COW },
     { 7, "N", CT_FLAG_NEEDS_COPY }, { 8, "S", CT_FLAG_SUPER },
     { 9, "D", CT_FLAG_GROWS_DOWN }, { 9, "U", CT_FLAG_GROWS_UP },
-    { 10, "W", CT_FLAG_USER_WIRED },
+    { 10, "W", CT_FLAG_USER_WIRED }, { 11, "c", CT_FLAG_HOLD_CAP },
 
-    { 12, "--", 0 }, { 12, "df", CT_TYPE_DEFAULT },
-    { 12, "vn", CT_TYPE_VNODE }, { 12, "sw", CT_TYPE_SWAP },
-    { 12, "dv", CT_TYPE_DEVICE }, { 12, "ph", CT_TYPE_PHYS },
-    { 12, "dd", CT_TYPE_DEAD }, { 12, "sg", CT_TYPE_SG },
-    { 12, "md", CT_TYPE_MGTDEVICE }, { 12, "gd", CT_TYPE_GUARD },
-    { 12, "??", CT_TYPE_UNKNOWN },
+    { 13, "--", 0 }, { 13, "df", CT_TYPE_DEFAULT },
+    { 13, "vn", CT_TYPE_VNODE }, { 13, "sw", CT_TYPE_SWAP },
+    { 13, "dv", CT_TYPE_DEVICE }, { 13, "ph", CT_TYPE_PHYS },
+    { 13, "dd", CT_TYPE_DEAD }, { 13, "sg", CT_TYPE_SG },
+    { 13, "md", CT_TYPE_MGTDEVICE }, { 13, "gd", CT_TYPE_GUARD },
+    { 13, "??", CT_TYPE_UNKNOWN },
     { 0 }
 };
 
 
 static void print_mapping(mapping_t *mapping)
 {
-    char s[15];
+    char s[16];
 
     flags_to_str(getflags(mapping), s, sizeof(s));
 
     printf("%#" PRIxADDR "-%#" PRIxADDR " %s %s %s %s [base %#" PRIxADDR "]\n",
-        mapping->start, mapping->end, &s[0], &s[6], &s[12],
+        mapping->start, mapping->end, &s[0], &s[6], &s[13],
         (*getpath(mapping) ? getpath(mapping) : getname(mapping)),
         mapping[mapping->base].start);
 }
@@ -178,17 +178,18 @@ static void print_mapping(mapping_t *mapping)
 
 static int load_mapping(char *buffer, vec_t *v)
 {
-    char s[15], path[PATH_MAX];
+    char s[16], path[PATH_MAX];
     addr_t start, end;
 
     strcpy(path, "");
     memset(s, 0, sizeof(s));
 
     if (sscanf(buffer, "%*d %" PRIxADDR " %" PRIxADDR
-            " %5s %*d %*d %*d %*d %5s %2s %s", &start, &end,
-            &s[0], &s[6], &s[12], path) < 5)
+            " %5s %*d %*d %*d %*d %6s%2s %s", &start, &end,
+            &s[0], &s[6], &s[13], path) < 5)
         return 1;
 
+    if (s[12] == ' ') s[12] = '-';
     return add_mapping(v, start, end, str_to_flags(s, sizeof(s)), path);
 }
 

@@ -54,7 +54,7 @@ Optionally, a call to ___cheritree_init()___ can be added before use. If there a
 <a id="prereq"></a>
 ## Runtime Prerequisites
 
-CheriBSD 22.12 is required for library compartmentalisation support.
+CheriBSD 22.12 or later is required for library compartmentalisation support.
 
 LD_LIBRARY_PATH must be set to include the compiled binaries. For example:
 

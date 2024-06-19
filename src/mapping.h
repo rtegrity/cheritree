@@ -73,6 +73,7 @@ int cheritree_dereference_address(void ***pptr, void **paddr);
 #define CT_FLAG_USER_WIRED      0x00800000
 #define CT_FLAG_SHARED          0x01000000
 #define CT_FLAG_PRIVATE         0x02000000
+#define CT_FLAG_HOLD_CAP        0x04000000
 
 
 /*
