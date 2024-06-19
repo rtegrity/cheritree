@@ -46,6 +46,7 @@ int lib1_access_int()
  */
 int lib1_local_access_int()
 {
+//  cheritree_print_capabilities();
     return lib1_access_int();
 }
 
@@ -77,5 +78,6 @@ int lib1_check_string_arg(const char *s, size_t len)
 #ifdef __CHERI_PURE_CAPABILITY__
     assert(cheri_length_get(s) == len);
 #endif
+//  cheritree_print_capabilities();
     return atoi(s);
 }
