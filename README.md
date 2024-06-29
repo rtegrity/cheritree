@@ -32,7 +32,7 @@ git clone https://github.com/rtegrity/cheritree
 
 CheriTree is implemented as a shared library and a stub that is linked with the application. Within the shared library, offsets are used rather than pointers, to minimise the number of capabilities introduced into the application.
 
-The library builds an in memory list of the mapped segments and loads the associated symbol tables. On FreeBSD this is done using the output from the ___procstat___ and ___nm___ commands. An earier version used ___libprocstat___, but the required libraries significantly complicated the address space, so the simpler design of an external command was used instead. On Linux, the /proc filesystem is used to obtain the mapped segments, but this is not enabled by default on CheriBSD and doesn't appear to have capability information added yet.
+The library builds an in memory list of the mapped segments and loads the associated symbol tables. On FreeBSD this is done using the output from the ___procstat___ and ___nm___ commands. An earlier version used ___libprocstat___, but the required libraries significantly complicated the address space, so the simpler design of an external command was used instead. On Linux, the /proc filesystem is used to obtain the mapped segments, but this is not enabled by default on CheriBSD and doesn't appear to have capability information added yet.
 
 During execution, segments (especially stacks) can grow and new libraries or mappings can be added. CheriTree attempts to handle this by reloading the mapping list if necessary.
 
